@@ -18,3 +18,11 @@ Następne kroki:
 - Dodać `composer.json` / `requirements.txt` w zależności od potrzeby
 - Jeżeli chcesz — mogę przygotować Dockerfile i plik `docker-compose.yml`.
 
+## Frontend / Design
+
+The `cementery/` folder contains the React application based on the Figma design.
+To run it, you need Node.js installed.
+Run `npm install` and `npm run dev` inside the `cementery` folder.
+
+A static preview of the design is available in `public/html/index.html`.
+

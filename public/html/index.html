@@ -1,14 +1,259 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CemeteryHub</title>
-  <link rel="stylesheet" href="../css/style.css">
+  <title>Eternal Rest Cemetery</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-  <h1>CemeteryHub</h1>
-  <p>Witamy w szkielecie strony — tu będzie treść.</p>
+<body class="min-h-screen bg-slate-50">
+
+  <!-- Header -->
+  <header class="bg-slate-900 text-white py-6 shadow-lg">
+    <div class="container mx-auto px-4">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="w-12 h-12 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center shadow-lg border border-slate-700">
+              <i data-lucide="map-pin" class="w-6 h-6 text-white absolute"></i>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold leading-tight">Eternal Rest Cemetery</h1>
+            <p class="text-slate-300 text-sm">Location & Services Management</p>
+          </div>
+        </div>
+        
+        <!-- Navigation Links -->
+        <nav class="flex flex-wrap items-center gap-3">
+          <button class="flex items-center px-4 py-2 text-white hover:bg-slate-800 rounded-md transition-colors">
+            <i data-lucide="phone" class="w-4 h-4 mr-2"></i>
+            Contact Us
+          </button>
+          <button class="flex items-center px-4 py-2 text-white hover:bg-slate-800 rounded-md transition-colors">
+            <i data-lucide="help-circle" class="w-4 h-4 mr-2"></i>
+            FAQ
+          </button>
+          <button class="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors shadow-sm">
+            <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
+            Make a Reservation
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-4 py-8">
+    
+    <!-- Tabs Navigation -->
+    <div class="space-y-6">
+      <div class="grid w-full max-w-2xl mx-auto grid-cols-4 bg-slate-200 p-1 rounded-lg" id="tabs-nav">
+        <button data-tab="search" class="tab-btn flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-white text-slate-950 shadow rounded-md transition-all">
+          <i data-lucide="search" class="w-4 h-4"></i>
+          Search
+        </button>
+        <button data-tab="map" class="tab-btn flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-all">
+          <i data-lucide="map" class="w-4 h-4"></i>
+          Map
+        </button>
+        <button data-tab="services" class="tab-btn flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-all">
+          <i data-lucide="wrench" class="w-4 h-4"></i>
+          Services
+        </button>
+        <button data-tab="articles" class="tab-btn flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-all">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          Articles
+        </button>
+      </div>
+
+      <!-- Tab Contents -->
+      <div id="tab-contents">
+        
+        <!-- Search Content -->
+        <div id="search" class="tab-content block max-w-4xl mx-auto space-y-6">
+          <!-- Search Bar -->
+          <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <div class="relative">
+              <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400"></i>
+              <input
+                id="search-input"
+                type="text"
+                placeholder="Search by name..."
+                class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <!-- Results Container -->
+          <div id="search-results" class="space-y-4">
+            <!-- Results will be injected here by JS -->
+          </div>
+        </div>
+
+        <!-- Map Content -->
+        <div id="map" class="tab-content hidden max-w-6xl mx-auto space-y-6">
+          <!-- Legend -->
+          <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-slate-200 border-2 border-slate-300 rounded"></div>
+                  <span class="text-slate-600">Available</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-slate-600 border-2 border-slate-700 rounded"></div>
+                  <span class="text-slate-600">Occupied</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-blue-600 border-2 border-blue-700 rounded"></div>
+                  <span class="text-slate-600">Selected</span>
+                </div>
+              </div>
+              <button id="clear-selection-btn" class="hidden px-4 py-2 border border-slate-200 rounded-md hover:bg-slate-100 text-sm transition-colors">
+                Clear Selection
+              </button>
+            </div>
+          </div>
+
+          <!-- Sections Container -->
+          <div id="map-sections" class="space-y-6">
+            <!-- Sections will be injected here -->
+          </div>
+
+          <!-- Selected Grave Details -->
+          <div id="map-selected-details" class="hidden bg-blue-50 p-6 rounded-lg border border-blue-200">
+             <!-- Details injected here -->
+          </div>
+        </div>
+
+        <!-- Services Content -->
+        <div id="services" class="tab-content hidden max-w-2xl mx-auto space-y-6">
+           <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <div class="flex items-center gap-3 mb-6">
+              <i data-lucide="wrench" class="w-6 h-6 text-slate-600"></i>
+              <div>
+                <h2 class="text-xl font-semibold text-slate-900">Order Tombstone Services</h2>
+                <p class="text-slate-600">Professional maintenance and restoration services</p>
+              </div>
+            </div>
+
+            <!-- Selected Grave Info for Service -->
+            <div id="service-selected-grave-info" class="hidden bg-slate-50 p-4 rounded-lg mb-6">
+              <!-- Injected via JS -->
+            </div>
+
+            <form id="service-form" class="space-y-6">
+              <!-- Contact Info -->
+              <div class="space-y-4">
+                <h3 class="font-semibold text-slate-900">Contact Information</h3>
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-slate-700">Full Name *</label>
+                  <input type="text" required class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your full name">
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-slate-700">Email *</label>
+                    <input type="email" required class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+                  </div>
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-slate-700">Phone *</label>
+                    <input type="tel" required class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="(555) 123-4567">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Service Selection -->
+              <div class="space-y-4">
+                <h3 class="font-semibold text-slate-900">Service Selection</h3>
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-slate-700">Primary Service *</label>
+                  <select id="service-select" required class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Select a service</option>
+                    <!-- Options injected via JS -->
+                  </select>
+                </div>
+                
+                <div class="space-y-3">
+                  <label class="block text-sm font-medium text-slate-700">Additional Services (Optional)</label>
+                  <div id="additional-services-container" class="space-y-2">
+                    <!-- Checkboxes injected via JS -->
+                  </div>
+                </div>
+
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-slate-700">Preferred Service Date *</label>
+                  <input type="date" required class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-slate-700">Additional Notes</label>
+                  <textarea rows="4" class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Any special requests or concerns..."></textarea>
+                </div>
+              </div>
+
+              <button type="submit" id="service-submit-btn" class="w-full py-2 px-4 bg-slate-900 text-white rounded-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Please select a location first
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Articles Content -->
+        <div id="articles" class="tab-content hidden max-w-6xl mx-auto space-y-6">
+           <div class="text-center space-y-2">
+            <h2 class="text-2xl font-bold text-slate-900">Tombstone Knowledge Center</h2>
+            <p class="text-slate-600">Expert insights and guides for making informed decisions</p>
+          </div>
+          <div id="articles-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Articles injected via JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-slate-800 text-white py-8 mt-16">
+    <div class="container mx-auto px-4">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div>
+          <h3 class="font-semibold mb-4">Eternal Rest Cemetery</h3>
+          <p class="text-slate-300 text-sm">
+            Providing compassionate care and professional services since 1950.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-4">Quick Links</h3>
+          <div class="space-y-2 text-sm">
+            <a href="#" class="block text-slate-300 hover:text-white transition-colors">Contact Us</a>
+            <a href="#" class="block text-slate-300 hover:text-white transition-colors">FAQ</a>
+            <a href="#" class="block text-slate-300 hover:text-white transition-colors">Make a Reservation</a>
+            <a href="#" class="block text-slate-300 hover:text-white transition-colors">Articles & Resources</a>
+          </div>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-4">Contact Information</h3>
+          <div class="space-y-2 text-slate-300 text-sm">
+            <p>123 Memorial Drive</p>
+            <p>Springfield, ST 12345</p>
+            <p>(555) 123-4567</p>
+            <p>info@eternalrest.com</p>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-slate-700 mt-8 pt-8 text-center text-slate-400 text-sm">
+        <p>&copy; 2024 Eternal Rest Cemetery. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
   <script src="../js/app.js"></script>
 </body>
 </html>
