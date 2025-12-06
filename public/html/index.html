@@ -28,15 +28,15 @@
         
         <!-- Navigation Links -->
         <nav class="flex flex-wrap items-center gap-3">
-          <button class="flex items-center px-4 py-2 text-white hover:bg-slate-800 rounded-md transition-colors">
+          <button id="contact-btn" class="flex items-center px-4 py-2 text-white hover:bg-slate-800 rounded-md transition-colors">
             <i data-lucide="phone" class="w-4 h-4 mr-2"></i>
             Kontakt
           </button>
-          <button class="flex items-center px-4 py-2 text-white hover:bg-slate-800 rounded-md transition-colors">
+          <button id="faq-btn" class="flex items-center px-4 py-2 text-white hover:bg-slate-800 rounded-md transition-colors">
             <i data-lucide="help-circle" class="w-4 h-4 mr-2"></i>
             FAQ
           </button>
-          <button class="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors shadow-sm">
+          <button id="reservation-btn" class="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors shadow-sm">
             <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
             Rezerwacje
           </button>
@@ -44,6 +44,70 @@
       </div>
     </div>
   </header>
+
+  <!-- Modals -->
+  <div id="contact-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+      <button class="close-modal absolute top-2 right-2 text-gray-500 hover:text-gray-700">&times;</button>
+      <h2 class="text-xl font-bold mb-4">Kontakt</h2>
+      <p class="mb-2">Skontaktuj się z nami:</p>
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Telefon: +48 123 456 789</li>
+        <li>Email: kontakt@cemeteryhub.pl</li>
+        <li>Adres: ul. Cmentarna 1, 00-001 Warszawa</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="faq-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full relative max-h-[80vh] overflow-y-auto">
+      <button class="close-modal absolute top-2 right-2 text-gray-500 hover:text-gray-700">&times;</button>
+      <h2 class="text-xl font-bold mb-4">FAQ</h2>
+      <div id="faq-list" class="space-y-3">
+        <!-- FAQ items injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <div id="reservation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+      <button class="close-modal absolute top-2 right-2 text-gray-500 hover:text-gray-700">&times;</button>
+      <h2 class="text-xl font-bold mb-4">Rezerwacja miejsca</h2>
+      <form id="reservation-form" class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Imię i Nazwisko</label>
+            <input type="text" id="res-name" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input type="email" id="res-email" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Telefon</label>
+            <input type="tel" id="res-phone" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Preferowana data</label>
+            <input type="date" id="res-date" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Wiadomość</label>
+            <textarea id="res-message" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Wyślij rezerwację</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Article Modal -->
+  <div id="article-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-8 rounded-lg shadow-lg max-w-2xl w-full relative max-h-[90vh] overflow-y-auto">
+      <button class="close-modal absolute top-4 right-4 text-gray-500 hover:text-gray-700">&times;</button>
+      <div id="article-content-container">
+        <!-- Content injected via JS -->
+      </div>
+    </div>
+  </div>
 
   <!-- Main Content -->
   <div class="container mx-auto px-4 py-8">
@@ -168,6 +232,15 @@
               <!-- Service Selection -->
               <div class="space-y-4">
                 <h3 class="font-semibold text-slate-900">Wybór usługi</h3>
+                
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-slate-700">Wybierz grób *</label>
+                  <select id="service-grave-select" class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Wybierz grób z listy --</option>
+                    <!-- Options injected via JS -->
+                  </select>
+                </div>
+
                 <div class="space-y-2">
                   <label class="block text-sm font-medium text-slate-700">Usługa podstawowa *</label>
                   <select id="service-select" required class="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">

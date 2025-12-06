@@ -1,85 +1,12 @@
-// Grave Data
-const graveData = [
-  { id: '1', name: 'John Anderson', birthDate: '1945.03.12', deathDate: '2018.07.22', section: 'A', row: 1, plot: 3, coordinates: { x: 0, y: 2 } },
-  { id: '2', name: 'Mary Thompson', birthDate: '1952.08.15', deathDate: '2020.11.30', section: 'A', row: 1, plot: 5, coordinates: { x: 0, y: 4 } },
-  { id: '3', name: 'Robert Williams', birthDate: '1938.01.20', deathDate: '2019.05.14', section: 'A', row: 2, plot: 2, coordinates: { x: 1, y: 1 } },
-  { id: '4', name: 'Elizabeth Davis', birthDate: '1960.11.03', deathDate: '2021.03.08', section: 'A', row: 2, plot: 4, coordinates: { x: 1, y: 3 } },
-  { id: '5', name: 'James Miller', birthDate: '1942.06.25', deathDate: '2017.12.19', section: 'A', row: 3, plot: 1, coordinates: { x: 2, y: 0 } },
-  { id: '6', name: 'Patricia Brown', birthDate: '1955.09.08', deathDate: '2022.01.15', section: 'A', row: 3, plot: 3, coordinates: { x: 2, y: 2 } },
-  { id: '7', name: 'Michael Johnson', birthDate: '1948.04.17', deathDate: '2019.08.22', section: 'B', row: 1, plot: 2, coordinates: { x: 0, y: 1 } },
-  { id: '8', name: 'Linda Wilson', birthDate: '1963.12.30', deathDate: '2023.06.11', section: 'B', row: 1, plot: 4, coordinates: { x: 0, y: 3 } },
-  { id: '9', name: 'David Martinez', birthDate: '1940.02.14', deathDate: '2018.10.05', section: 'B', row: 2, plot: 1, coordinates: { x: 1, y: 0 } },
-  { id: '10', name: 'Barbara Garcia', birthDate: '1958.07.21', deathDate: '2021.09.28', section: 'B', row: 2, plot: 5, coordinates: { x: 1, y: 4 } },
-  { id: '11', name: 'Richard Rodriguez', birthDate: '1935.05.09', deathDate: '2016.04.13', section: 'B', row: 3, plot: 2, coordinates: { x: 2, y: 1 } },
-  { id: '12', name: 'Susan Lee', birthDate: '1961.10.28', deathDate: '2022.07.30', section: 'B', row: 3, plot: 4, coordinates: { x: 2, y: 3 } },
-];
+// Global Configuration
+const API_BASE = window.location.port === '5000' ? '' : 'http://localhost:5000';
 
-// Services Data
-const servicesList = [
-  { id: 'czyszczenie', name: 'Czyszczenie nagrobków', price: '150zł+' },
-  { id: 'naprawa', name: 'Naprawa nagrobków', price: '300zł+' },
-  { id: 'grawerunek', name: 'Dodatkowe grawerowanie', price: '200zł+' },
-  { id: 'renowacja', name: 'Pełna renowacja', price: '500zł+' },
-  { id: 'landscaping', name: 'Zagospodarowanie terenu', price: '100zł' },
-];
-
-const additionalServicesList = [
-  { id: 'kwiaty', name: 'Umieszczanie świeżych kwiatów', price: '50zł' },
-  { id: 'zdjęcie', name: 'Zdjęcia przed/po', price: '25zł' },
-  { id: 'uszczelniacz', name: 'Uszczelniacz ochronny', price: '75zł' },
-];
-
-// Articles Data
-const articlesList = [
-  {
-    id: 1,
-    title: 'Wybór odpowiedniego materiału na nagrobek: kompletny przewodnik',
-    excerpt: 'Zrozumienie różnic pomiędzy granitem, marmurem i brązem może pomóc Ci podjąć świadomą decyzję, która będzie trwała przez pokolenia.',
-    date: '2024-11-15',
-    category: 'Materiały',
-    readTime: '5 minut czytania',
-  },
-  {
-    id: 2,
-    title: 'Konserwacja nagrobków: porady dotyczące pielęgnacji sezonowej',
-    excerpt: 'Dowiedz się, jak prawidłowo pielęgnować i konserwować nagrobki w różnych porach roku, aby zachować ich piękno i integralność.',
-    date: '2024-11-10',
-    category: 'Konserwacja',
-    readTime: '4 minuty czytania',
-  },
-  {
-    id: 3,
-    title: 'Historia symboliki cmentarnej',
-    excerpt: 'Odkryj znaczenie symboli powszechnie spotykanych na nagrobkach – od aniołów i gołębi po krzyże i kwiaty.',
-    date: '2024-11-05',
-    category: 'Historia',
-    readTime: '7 minut czytania',
-  },
-  {
-    id: 4,
-    title: 'Renowacja czy wymiana: Dokonanie właściwego wyboru',
-    excerpt: 'Gdy nagrobek nosi ślady zużycia, należy zrozumieć, kiedy go odnowić, a kiedy wymienić, może zaoszczędzić pieniądze i zachować historię.',
-    date: '2024-10-28',
-    category: 'Renowacja',
-    readTime: '6 minut czytania',
-  },
-  {
-    id: 5,
-    title: 'Nowoczesne trendy w projektowaniu nagrobków',
-    excerpt: 'Poznaj współczesne podejścia do projektowania obiektów upamiętniających, od grawerowania laserowego po niestandardowe rzeźby i spersonalizowane grawerunki.',
-    date: '2024-10-20',
-    category: 'Projekt',
-    readTime: '5 minut czytania',
-  },
-  {
-    id: 6,
-    title: 'Zagadnienia środowiskowe w planowaniu cmentarzy',
-    excerpt: 'Dowiedz się więcej o przyjaznych dla środowiska możliwościach pochówku i zrównoważonych praktykach cmentarnych, które są korzystniejsze dla środowiska.',
-    date: '2024-10-12',
-    category: 'Środowisko',
-    readTime: '6 minut czytania',
-  },
-];
+// Data Containers
+let graveData = [];
+let servicesList = [];
+let additionalServicesList = [];
+let articlesList = [];
+let sectionsList = [];
 
 // State
 let selectedGrave = null;
@@ -106,15 +33,20 @@ const serviceForm = document.getElementById('service-form');
 const articlesGrid = document.getElementById('articles-grid');
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadData();
+  
   renderGraves(graveData);
   setupTabs();
   setupSearch();
+  setupModals();
   
   // Initialize Modules
   renderMap();
   renderServicesForm();
   renderArticles();
+  renderFAQ();
+  setupReservationForm();
   
   // Re-initialize icons
   if (window.lucide) {
@@ -122,7 +54,85 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+async function loadData() {
+  try {
+    const [gravesRes, servicesRes, sectionsRes, articlesRes] = await Promise.all([
+      fetch(`${API_BASE}/api/graves`),
+      fetch(`${API_BASE}/api/services`),
+      fetch(`${API_BASE}/api/sections`),
+      fetch(`${API_BASE}/api/articles`)
+    ]);
+
+    if (gravesRes.ok) {
+        const rawGraves = await gravesRes.json();
+        graveData = rawGraves.map(g => {
+            // Parse coordinates if string "x,y"
+            if (typeof g.coordinates === 'string') {
+                const [x, y] = g.coordinates.split(',').map(Number);
+                return { ...g, coordinates: { x, y } };
+            }
+            return g;
+        });
+    }
+
+    if (servicesRes.ok) {
+        const allServices = await servicesRes.json();
+        servicesList = allServices.filter(s => s.category === 'primary');
+        additionalServicesList = allServices.filter(s => s.category === 'additional');
+    }
+
+    if (sectionsRes.ok) {
+        sectionsList = await sectionsRes.json();
+    }
+
+    if (articlesRes.ok) {
+        articlesList = await articlesRes.json();
+        renderArticles(); // Re-render articles after fetch
+    }
+
+  } catch (error) {
+    console.error('Error loading data:', error);
+  }
+}
+
 // Functions
+function setupModals() {
+  const modals = {
+    'contact-btn': 'contact-modal',
+    'faq-btn': 'faq-modal',
+    'reservation-btn': 'reservation-modal'
+  };
+
+  Object.keys(modals).forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    const modal = document.getElementById(modals[btnId]);
+    if (btn && modal) {
+      btn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      });
+    }
+  });
+
+  document.querySelectorAll('.close-modal').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const modal = e.target.closest('.fixed'); // Find parent modal
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    });
+  });
+
+  // Close on click outside
+  window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('fixed')) {
+      e.target.classList.add('hidden');
+      e.target.classList.remove('flex');
+    }
+  });
+}
+
 function setupTabs() {
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -194,11 +204,11 @@ function renderGraves(graves) {
         </div>
 
         <div class="flex flex-col gap-2">
-          <button onclick="selectGraveAndShowMap('${grave.id}')" class="flex items-center px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 text-sm transition-colors">
+          <button onclick="selectGraveAndShowMap(${grave.id})" class="flex items-center px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 text-sm transition-colors">
             <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
             Zobacz na mapie
           </button>
-          <button onclick="selectGraveAndShowServices('${grave.id}')" class="flex items-center px-4 py-2 border border-slate-200 text-slate-900 rounded-md hover:bg-slate-100 text-sm transition-colors">
+          <button onclick="selectGraveAndShowServices(${grave.id})" class="flex items-center px-4 py-2 border border-slate-200 text-slate-900 rounded-md hover:bg-slate-100 text-sm transition-colors">
             <i data-lucide="wrench" class="w-4 h-4 mr-2"></i>
             Wybierz usługę
           </button>
@@ -212,10 +222,11 @@ function renderGraves(graves) {
 
 // --- Map Logic ---
 function renderMap() {
-  const sections = ['A', 'B'];
-  const gridSize = { rows: 4, cols: 6 };
+  const sectionsToRender = sectionsList.length > 0 ? sectionsList : [{name: 'A', rows: 4, cols: 6}, {name: 'B', rows: 4, cols: 6}];
 
-  mapSectionsContainer.innerHTML = sections.map(section => {
+  mapSectionsContainer.innerHTML = sectionsToRender.map(secObj => {
+    const section = secObj.name;
+    const gridSize = { rows: secObj.rows || 4, cols: secObj.cols || 6 };
     const sectionGraves = graveData.filter(g => g.section === section);
     
     // Generate Grid Cells
@@ -248,11 +259,11 @@ function renderMap() {
             cellClass = 'bg-slate-600 border-slate-700 hover:bg-slate-700 hover:scale-105 cursor-pointer';
           }
           content = `<div class="text-white text-center px-1"><div class="text-[10px] truncate">${grave.name}</div></div>`;
-          onClick = `onclick="handleMapGraveClick('${grave.id}')"`;
+          onClick = `onclick="handleMapGraveClick(${grave.id})"`;
         }
 
         gridCellsHTML += `
-          <button ${onClick} class="h-16 rounded border-2 transition-all w-full ${cellClass}" ${!grave ? 'Niedostępne' : ''} title="${grave ? grave.name : 'Dostępne'}">
+          <button ${onClick} class="h-16 rounded border-2 transition-all w-full ${cellClass}" ${!grave ? 'disabled' : ''} title="${grave ? grave.name : 'Dostępne'}">
             ${content}
           </button>
         `;
@@ -323,58 +334,117 @@ function selectGraveAndShowMap(id) {
 
 // --- Services Logic ---
 function renderServicesForm() {
+  // Helper to format price
+  const formatPrice = (price) => typeof price === 'number' ? `${price.toFixed(2)} PLN` : price;
+
   // Populate Select
   serviceSelect.innerHTML = '<option value="">Wybierz usługę</option>' + 
-    servicesList.map(s => `<option value="${s.id}">${s.name} - ${s.price}</option>`).join('');
+    servicesList.map(s => `<option value="${s.slug}">${s.name} - ${formatPrice(s.price)}</option>`).join('');
+
+  // Populate Grave Select
+  const graveSelect = document.getElementById('service-grave-select');
+  if (graveSelect) {
+    graveSelect.innerHTML = '<option value="">-- Wybierz grób z listy --</option>' + 
+      graveData.map(g => `<option value="${g.id}">${g.name} (Sektor ${g.section}, Rząd ${g.row}, Miejsce ${g.plot})</option>`).join('');
+    
+    graveSelect.addEventListener('change', (e) => {
+      const selectedId = parseInt(e.target.value);
+      if (selectedId) {
+        selectedGrave = graveData.find(g => g.id === selectedId);
+        updateServiceSelection();
+      } else {
+        selectedGrave = null;
+        updateServiceSelection();
+      }
+    });
+  }
 
   // Populate Checkboxes
   additionalServicesContainer.innerHTML = additionalServicesList.map(s => `
     <div class="flex items-center space-x-2">
-      <input type="checkbox" id="${s.id}" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-      <label for="${s.id}" class="flex-1 cursor-pointer text-slate-700 text-sm">
-        ${s.name} - ${s.price}
+      <input type="checkbox" id="${s.slug}" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+      <label for="${s.slug}" class="flex-1 cursor-pointer text-slate-700 text-sm">
+        ${s.name} - ${formatPrice(s.price)}
       </label>
     </div>
   `).join('');
 
   // Handle Submit
-  serviceForm.addEventListener('Zgłoś', (e) => {
+  serviceForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!selectedGrave) return;
 
     // Simulate submission
     const originalBtnText = serviceSubmitBtn.innerText;
-    serviceSubmitBtn.innerText = 'Zgłaszanie...';
+    serviceSubmitBtn.innerText = 'Wysyłanie...';
     serviceSubmitBtn.disabled = true;
 
-    setTimeout(() => {
-      alert(`Zgłoszenie serwisowe dla ${selectedGrave.name} zostało pomyślnie wysłane! Wkrótce się z Tobą skontaktujemy.`);
-      serviceForm.reset();
-      selectedGrave = null;
-      renderMap();
-      updateServiceSelection();
-      serviceSubmitBtn.innerText = originalBtnText;
-      serviceSubmitBtn.disabled = false;
-    }, 1500);
+    const formData = {
+        graveId: selectedGrave.id,
+        serviceType: serviceSelect.value,
+        date: new Date().toISOString().split('T')[0],
+        scheduled_date: serviceForm.querySelector('input[type="date"]').value,
+        contactName: serviceForm.querySelector('input[placeholder="Podaj swoje imię i nazwisko"]').value,
+        contactEmail: serviceForm.querySelector('input[type="email"]').value,
+        contactPhone: serviceForm.querySelector('input[type="tel"]').value,
+        notes: serviceForm.querySelector('textarea').value
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/api/service-requests`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            alert(`Zgłoszenie serwisowe dla ${selectedGrave.name} zostało pomyślnie wysłane! Wkrótce się z Tobą skontaktujemy.`);
+            serviceForm.reset();
+            selectedGrave = null;
+            renderMap();
+            updateServiceSelection();
+        } else {
+            alert('Wystąpił błąd podczas wysyłania zgłoszenia.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Wystąpił błąd połączenia.');
+    } finally {
+        serviceSubmitBtn.innerText = originalBtnText;
+        serviceSubmitBtn.disabled = false;
+    }
   });
 }
 
 function updateServiceSelection() {
+  const graveSelect = document.getElementById('service-grave-select');
+  
   if (selectedGrave) {
     serviceSelectedGraveInfo.classList.remove('hidden');
     serviceSelectedGraveInfo.innerHTML = `
-      <div class="text-slate-900 font-medium">Selected Location: ${selectedGrave.name}</div>
-      <div class="text-slate-600 text-sm">Section ${selectedGrave.section} • Row ${selectedGrave.row} • Plot ${selectedGrave.plot}</div>
-      <button onclick="selectedGrave = null; renderMap(); updateServiceSelection();" class="text-blue-600 hover:underline text-sm mt-1">Change location</button>
+      <div class="text-slate-900 font-medium">Wybrana lokalizacja: ${selectedGrave.name}</div>
+      <div class="text-slate-600 text-sm">Sektor ${selectedGrave.section} • Rząd ${selectedGrave.row} • Miejsce ${selectedGrave.plot}</div>
     `;
     serviceSubmitBtn.disabled = false;
-    serviceSubmitBtn.innerText = 'Submit Service Request';
+    serviceSubmitBtn.innerText = 'Wyślij zgłoszenie';
     serviceSubmitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    
+    // Sync select if it exists and values differ
+    if (graveSelect && graveSelect.value != selectedGrave.id) {
+        graveSelect.value = selectedGrave.id;
+    }
+
   } else {
     serviceSelectedGraveInfo.classList.add('hidden');
     serviceSubmitBtn.disabled = true;
-    serviceSubmitBtn.innerText = 'Please select a location first';
+    serviceSubmitBtn.innerText = 'Proszę najpierw wybrać lokalizację';
     serviceSubmitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    
+    if (graveSelect) {
+        graveSelect.value = "";
+    }
   }
 }
 
@@ -387,8 +457,11 @@ function selectGraveAndShowServices(id) {
 
 // --- Articles Logic ---
 function renderArticles() {
-  articlesGrid.innerHTML = articlesList.map(article => `
-    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-lg transition-all group cursor-pointer">
+  const dataToRender = articlesList;
+  window.currentArticles = dataToRender; // Store for modal access
+
+  articlesGrid.innerHTML = dataToRender.map(article => `
+    <div onclick="openArticleModal(${article.id})" class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-lg transition-all group cursor-pointer">
       <div class="space-y-4">
         <div class="space-y-2">
           <span class="inline-flex items-center rounded-full border border-transparent bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-200/80">
@@ -406,17 +479,122 @@ function renderArticles() {
         <div class="flex items-center justify-between pt-4 border-t border-slate-100">
           <div class="flex items-center gap-2 text-slate-500 text-xs">
             <i data-lucide="calendar" class="w-3 h-3"></i>
-            <span>${new Date(article.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            <span>${new Date(article.date).toLocaleDateString('pl-PL', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
           <span class="text-slate-500 text-xs">${article.readTime}</span>
         </div>
-
+        
         <button class="text-sm font-medium text-slate-900 hover:underline flex items-center mt-2 group-hover:gap-2 transition-all">
-          Read More
+          Czytaj więcej
           <i data-lucide="arrow-right" class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"></i>
         </button>
       </div>
     </div>
   `).join('');
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function openArticleModal(id) {
+    const article = window.currentArticles.find(a => a.id === id);
+    if (!article) return;
+
+    const modal = document.getElementById('article-modal');
+    const container = document.getElementById('article-content-container');
+    
+    container.innerHTML = `
+        <div class="space-y-6">
+            <div class="space-y-2">
+                <span class="inline-flex items-center rounded-full border border-transparent bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-900">
+                    ${article.category}
+                </span>
+                <h2 class="text-2xl font-bold text-slate-900">${article.title}</h2>
+                <div class="flex items-center gap-4 text-slate-500 text-sm">
+                    <div class="flex items-center gap-1">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>${new Date(article.date).toLocaleDateString('pl-PL', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <i data-lucide="clock" class="w-4 h-4"></i>
+                        <span>${article.readTime}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="prose prose-slate max-w-none text-slate-700 leading-relaxed">
+                ${article.content || article.excerpt}
+            </div>
+        </div>
+    `;
+    
+    if (window.lucide) window.lucide.createIcons();
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// --- FAQ Logic ---
+async function renderFAQ() {
+    try {
+        const response = await fetch(`${API_BASE}/api/faqs`);
+        const faqs = await response.json();
+        const faqList = document.getElementById('faq-list');
+        
+        if (faqs && faqs.length > 0) {
+            faqList.innerHTML = faqs.map(faq => `
+                <div class="border-b border-gray-200 pb-2 last:border-0">
+                    <h3 class="font-semibold text-slate-900 mb-1">${faq.question}</h3>
+                    <p class="text-sm text-slate-600">${faq.answer}</p>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error fetching FAQs:', error);
+    }
+}
+
+// --- Reservation Logic ---
+function setupReservationForm() {
+    const form = document.getElementById('reservation-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.innerText = 'Wysyłanie...';
+        btn.disabled = true;
+
+        const formData = {
+            name: document.getElementById('res-name').value,
+            email: document.getElementById('res-email').value,
+            phone: document.getElementById('res-phone').value,
+            date: document.getElementById('res-date').value,
+            message: document.getElementById('res-message').value
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/api/reservations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                alert('Dziękujemy! Twoja rezerwacja została przyjęta. Skontaktujemy się wkrótce.');
+                form.reset();
+                document.getElementById('reservation-modal').classList.add('hidden');
+                document.getElementById('reservation-modal').classList.remove('flex');
+            } else {
+                alert('Wystąpił błąd. Spróbuj ponownie.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Błąd połączenia.');
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
 }
 

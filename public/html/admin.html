@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Panel Administratora - Cmentarz Wieczny Spoczynek</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="lock" class="w-6 h-6 text-white"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-900">Logowanie Administratora</h1>
+        <p class="text-slate-500">Zaloguj się, aby kontynuować</p>
+      </div>
+      
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa użytkownika</label>
+          <input type="text" id="username" name="username" required class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Hasło</label>
+          <input type="password" id="password" name="password" required class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div id="login-error" class="text-red-500 text-sm hidden">Nieprawidłowe dane logowania</div>
+        <button type="submit" class="w-full py-2 px-4 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors">
+          Zaloguj się
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="hidden min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm z-10">
+      <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-slate-900 rounded flex items-center justify-center">
+            <i data-lucide="shield" class="w-4 h-4 text-white"></i>
+          </div>
+          <span class="font-bold text-slate-900">Panel Administratora</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span id="user-display" class="text-sm text-slate-600"></span>
+          <button onclick="logout()" class="text-sm text-red-600 hover:text-red-700 font-medium">Wyloguj</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex flex-1 container mx-auto px-4 py-8 gap-8">
+      <!-- Sidebar -->
+      <aside class="w-64 flex-shrink-0">
+        <nav class="space-y-1">
+          <button onclick="switchView('graves')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-700">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+            Zarządzanie Grobami
+          </button>
+          <button onclick="switchView('articles')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            Artykuły
+          </button>
+          <button onclick="switchView('requests')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50">
+            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+            Zgłoszenia Usług
+          </button>
+          <button onclick="switchView('global-calendar')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50">
+            <i data-lucide="calendar" class="w-4 h-4"></i>
+            Kalendarz Globalny
+          </button>
+          <button onclick="switchView('services')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50">
+            <i data-lucide="tag" class="w-4 h-4"></i>
+            Usługi i Cennik
+          </button>
+          <button onclick="switchView('messages')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50">
+            <i data-lucide="mail" class="w-4 h-4"></i>
+            Wiadomości
+          </button>
+          <button onclick="switchView('reservations')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50">
+            <i data-lucide="calendar-check" class="w-4 h-4"></i>
+            Rezerwacje
+          </button>
+          <button onclick="switchView('faqs')" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50">
+            <i data-lucide="help-circle" class="w-4 h-4"></i>
+            Zarządzanie FAQ
+          </button>
+          <button onclick="switchView('users')" id="users-nav" class="nav-btn w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 hidden">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            Zarządzanie Użytkownikami
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Content -->
+      <main class="flex-1 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        
+        <!-- Graves View -->
+        <div id="view-graves" class="view-content space-y-6">
+          <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-900">Zarządzanie Grobami</h2>
+            <div class="flex gap-2">
+                <button onclick="openAddSectionModal()" class="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-900 text-sm">
+                  <i data-lucide="plus-square" class="w-4 h-4"></i>
+                  Dodaj Sekcję
+                </button>
+                <button onclick="openAddGraveModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  Dodaj Grób Ręcznie
+                </button>
+            </div>
+          </div>
+
+          <!-- Admin Map -->
+          <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h3 class="text-lg font-semibold mb-4">Mapa Cmentarza (Kliknij puste miejsce, aby dodać)</h3>
+            <div class="flex items-center gap-6 mb-4 text-sm">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-slate-100 border-2 border-slate-300 rounded border-dashed"></div>
+                <span class="text-slate-600">Wolne (Kliknij, aby dodać)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-slate-600 border-2 border-slate-700 rounded"></div>
+                <span class="text-slate-600">Zajęte</span>
+              </div>
+            </div>
+            <div id="admin-map-container" class="space-y-6">
+              <!-- Map injected via JS -->
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <h3 class="text-lg font-semibold mb-4">Wszystkie Rekordy</h3>
+            <table class="w-full text-sm text-left text-slate-600">
+              <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                <tr>
+                  <th class="px-6 py-3">Imię i Nazwisko</th>
+                  <th class="px-6 py-3">Lokalizacja</th>
+                  <th class="px-6 py-3">Daty</th>
+                  <th class="px-6 py-3">Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="graves-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Articles View -->
+        <div id="view-articles" class="view-content hidden space-y-6">
+          <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-900">Zarządzanie Artykułami</h2>
+            <div class="flex gap-2">
+                <button onclick="openCategoriesModal()" class="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-md hover:bg-slate-900 text-sm">
+                  <i data-lucide="list" class="w-4 h-4"></i>
+                  Zarządzaj Kategoriami
+                </button>
+                <button onclick="openAddArticleModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  Dodaj Artykuł
+                </button>
+            </div>
+          </div>
+          <div class="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+            <table class="w-full text-sm text-left text-slate-600">
+              <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                <tr>
+                  <th class="px-6 py-3">Data</th>
+                  <th class="px-6 py-3">Tytuł</th>
+                  <th class="px-6 py-3">Kategoria</th>
+                  <th class="px-6 py-3">Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="articles-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Requests View -->
+        <div id="view-requests" class="view-content hidden space-y-6">
+          <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-900">Zgłoszenia Usług</h2>
+            <button onclick="openAddRequestModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Dodaj Zgłoszenie
+            </button>
+          </div>
+
+          <!-- Sub Navigation -->
+          <div class="flex space-x-1 bg-slate-100 p-1 rounded-lg w-fit">
+            <button onclick="switchRequestView('board')" id="req-nav-board" class="req-nav-btn px-4 py-2 text-sm font-medium rounded-md bg-white text-slate-900 shadow-sm">
+              <i data-lucide="kanban" class="w-4 h-4 inline mr-2"></i>Tablica
+            </button>
+            <button onclick="switchRequestView('calendar')" id="req-nav-calendar" class="req-nav-btn px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-900">
+              <i data-lucide="calendar" class="w-4 h-4 inline mr-2"></i>Kalendarz
+            </button>
+            <button onclick="switchRequestView('history')" id="req-nav-history" class="req-nav-btn px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-900">
+              <i data-lucide="history" class="w-4 h-4 inline mr-2"></i>Historia
+            </button>
+          </div>
+
+          <!-- Board View -->
+          <div id="req-view-board" class="req-view-content grid grid-cols-3 gap-6 h-[calc(100vh-300px)] overflow-hidden">
+            <!-- Pending Column -->
+            <div class="flex flex-col bg-slate-50 rounded-lg border border-slate-200 h-full">
+              <div class="p-3 border-b border-slate-200 bg-white rounded-t-lg flex justify-between items-center">
+                <span class="font-semibold text-slate-700">Oczekujące</span>
+                <span id="count-pending" class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full">0</span>
+              </div>
+              <div id="board-pending" class="p-3 space-y-3 overflow-y-auto flex-1" ondrop="drop(event, 'pending')" ondragover="allowDrop(event)">
+                <!-- Cards injected via JS -->
+              </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="flex flex-col bg-slate-50 rounded-lg border border-slate-200 h-full">
+              <div class="p-3 border-b border-slate-200 bg-white rounded-t-lg flex justify-between items-center">
+                <span class="font-semibold text-blue-700">W Trakcie</span>
+                <span id="count-in_progress" class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full">0</span>
+              </div>
+              <div id="board-in_progress" class="p-3 space-y-3 overflow-y-auto flex-1" ondrop="drop(event, 'in_progress')" ondragover="allowDrop(event)">
+                <!-- Cards injected via JS -->
+              </div>
+            </div>
+
+            <!-- Completed Column -->
+            <div class="flex flex-col bg-slate-50 rounded-lg border border-slate-200 h-full">
+              <div class="p-3 border-b border-slate-200 bg-white rounded-t-lg flex justify-between items-center">
+                <span class="font-semibold text-green-700">Zakończone</span>
+                <span id="count-completed" class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded-full">0</span>
+              </div>
+              <div id="board-completed" class="p-3 space-y-3 overflow-y-auto flex-1" ondrop="drop(event, 'completed')" ondragover="allowDrop(event)">
+                <!-- Cards injected via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar View -->
+          <div id="req-view-calendar" class="req-view-content hidden">
+            <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-slate-900" id="calendar-month-display">Listopad 2025</h3>
+                <div class="flex gap-2">
+                  <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                  <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+              <div class="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+                <!-- Headers -->
+                <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Ndz</div>
+                <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Pon</div>
+                <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Wt</div>
+                <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Śr</div>
+                <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Czw</div>
+                <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Pt</div>
+                <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Sob</div>
+                <!-- Days injected via JS -->
+                <div id="calendar-grid" class="contents"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- History View -->
+          <div id="req-view-history" class="req-view-content hidden">
+            <div class="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+              <table class="w-full text-sm text-left text-slate-600">
+                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                  <tr>
+                    <th class="px-6 py-3">Data</th>
+                    <th class="px-6 py-3">Zaplanowane</th>
+                    <th class="px-6 py-3">Klient</th>
+                    <th class="px-6 py-3">Usługa</th>
+                    <th class="px-6 py-3">Koszt</th>
+                    <th class="px-6 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="requests-history-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Global Calendar View -->
+        <div id="view-global-calendar" class="view-content hidden space-y-6">
+          <h2 class="text-xl font-bold text-slate-900">Kalendarz Globalny</h2>
+          <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-lg font-semibold text-slate-900" id="global-calendar-month-display">Listopad 2025</h3>
+              <div class="flex gap-2">
+                <button onclick="changeGlobalMonth(-1)" class="p-2 hover:bg-slate-100 rounded"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                <button onclick="changeGlobalMonth(1)" class="p-2 hover:bg-slate-100 rounded"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+              </div>
+            </div>
+            <div class="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+              <!-- Headers -->
+              <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Ndz</div>
+              <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Pon</div>
+              <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Wt</div>
+              <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Śr</div>
+              <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Czw</div>
+              <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Pt</div>
+              <div class="bg-slate-50 p-2 text-center text-xs font-medium text-slate-500">Sob</div>
+              <!-- Days injected via JS -->
+              <div id="global-calendar-grid" class="contents"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Services View -->
+        <div id="view-services" class="view-content hidden space-y-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Usługi i Cennik</h2>
+              <p class="text-slate-500">Zarządzaj cenami podstawowymi oferowanych usług.</p>
+            </div>
+            <button onclick="openAddServiceModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Dodaj Usługę
+            </button>
+          </div>
+          
+          <div class="grid md:grid-cols-2 gap-8">
+            <!-- Primary Services -->
+            <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+              <h3 class="font-semibold text-slate-900 mb-4">Usługi Główne</h3>
+              <div id="primary-services-list" class="space-y-4">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Additional Services -->
+            <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+              <h3 class="font-semibold text-slate-900 mb-4">Usługi Dodatkowe</h3>
+              <div id="additional-services-list" class="space-y-4">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages View -->
+        <div id="view-messages" class="view-content hidden space-y-6">
+          <h2 class="text-xl font-bold text-slate-900">Wiadomości Kontaktowe</h2>
+          <div class="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+            <table class="w-full text-sm text-left text-slate-600">
+              <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                <tr>
+                  <th class="px-6 py-3">Data</th>
+                  <th class="px-6 py-3">Imię i Nazwisko</th>
+                  <th class="px-6 py-3">Email</th>
+                  <th class="px-6 py-3">Wiadomość</th>
+                  <th class="px-6 py-3">Status</th>
+                  <th class="px-6 py-3">Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="messages-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Reservations View -->
+        <div id="view-reservations" class="view-content hidden space-y-6">
+          <h2 class="text-xl font-bold text-slate-900">Rezerwacje</h2>
+          <div class="overflow-x-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+            <table class="w-full text-sm text-left text-slate-600">
+              <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                <tr>
+                  <th class="px-6 py-3">Data</th>
+                  <th class="px-6 py-3">Imię i Nazwisko</th>
+                  <th class="px-6 py-3">Kontakt</th>
+                  <th class="px-6 py-3">Szczegóły</th>
+                  <th class="px-6 py-3">Status</th>
+                  <th class="px-6 py-3">Akcje</th>
+                </tr>
+              </thead>
+              <tbody id="reservations-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- FAQs View -->
+        <div id="view-faqs" class="view-content hidden space-y-6">
+          <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold text-slate-900">Zarządzanie FAQ</h2>
+            <button onclick="openAddFaqModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Dodaj FAQ
+            </button>
+          </div>
+          <div id="faqs-list" class="space-y-4">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- Users View (Super Admin Only) -->
+        <div id="view-users" class="view-content hidden space-y-6">
+          <h2 class="text-xl font-bold text-slate-900">Zarządzanie Użytkownikami</h2>
+          <p class="text-slate-500">Zarządzaj administratorami i moderatorami systemu.</p>
+          <!-- Placeholder for user management -->
+          <div class="p-4 bg-yellow-50 text-yellow-800 rounded-md">
+            Funkcja dostępna wkrótce.
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Grave Modal -->
+  <div id="add-grave-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddGraveModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Dodaj Nowy Grób</h3>
+      <form id="add-grave-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Imię i Nazwisko</label>
+          <input type="text" name="name" required class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Data Urodzenia</label>
+            <input type="date" name="birthDate" class="w-full px-3 py-2 border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Data Śmierci</label>
+            <input type="date" name="deathDate" class="w-full px-3 py-2 border rounded-md">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Sekcja</label>
+            <input type="text" name="section" id="input-section" required class="w-full px-3 py-2 border rounded-md bg-slate-50" readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Rząd</label>
+            <input type="number" name="row" id="input-row" required class="w-full px-3 py-2 border rounded-md bg-slate-50" readonly>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Miejsce</label>
+            <input type="number" name="plot" id="input-plot" required class="w-full px-3 py-2 border rounded-md bg-slate-50" readonly>
+          </div>
+        </div>
+        <!-- Hidden Coordinates -->
+        <input type="hidden" name="coord_x" id="input-coord-x">
+        <input type="hidden" name="coord_y" id="input-coord-y">
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeAddGraveModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Zapisz Grób</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Request Modal -->
+  <div id="add-request-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddRequestModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-lg font-bold mb-4">Dodaj Zgłoszenie Usługi</h3>
+      <form id="add-request-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">ID Grobu (Szukaj po Nazwisku/Lokalizacji)</label>
+          <input type="text" list="graves-datalist" name="grave_id_input" id="request-grave-input" required class="w-full px-3 py-2 border rounded-md" placeholder="Wpisz, aby wyszukać...">
+          <datalist id="graves-datalist">
+            <!-- Populated by JS -->
+          </datalist>
+          <input type="hidden" name="grave_id" id="request-grave-id-hidden">
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Imię i Nazwisko Klienta</label>
+                <input type="text" name="customer_name" required class="w-full px-3 py-2 border rounded-md">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Telefon</label>
+                <input type="text" name="phone" class="w-full px-3 py-2 border rounded-md">
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Email</label>
+            <input type="email" name="email" class="w-full px-3 py-2 border rounded-md">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Wybierz Usługi</label>
+          <div id="add-request-services-list" class="max-h-40 overflow-y-auto border border-slate-200 rounded p-2 bg-slate-50">
+            <!-- Checkboxes injected via JS -->
+          </div>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Uwagi</label>
+            <textarea name="notes" class="w-full px-3 py-2 border rounded-md h-20"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeAddRequestModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Utwórz Zgłoszenie</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Service Modal -->
+  <div id="add-service-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddServiceModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Dodaj Nową Usługę</h3>
+      <form id="add-service-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Nazwa Usługi</label>
+          <input type="text" name="name" required class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Unikalne ID (Slug)</label>
+          <input type="text" name="slug" required class="w-full px-3 py-2 border rounded-md" placeholder="np. premium-cleaning">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Cena (PLN)</label>
+          <input type="number" name="price" required step="0.01" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Kategoria</label>
+          <select name="category" class="w-full px-3 py-2 border rounded-md">
+            <option value="primary">Usługa Główna</option>
+            <option value="additional">Usługa Dodatkowa</option>
+          </select>
+        </div>
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeAddServiceModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Dodaj Usługę</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Request Details Modal -->
+  <div id="request-details-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeRequestDetailsModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="text-lg font-bold text-slate-900">Szczegóły Zgłoszenia</h3>
+        <button onclick="closeRequestDetailsModal()" class="text-slate-400 hover:text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div id="request-details-content" class="space-y-4">
+        <!-- Injected via JS -->
+      </div>
+
+      <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100" id="request-details-actions">
+        <!-- Actions injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Day Details Modal -->
+  <div id="day-details-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDayDetailsModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="text-lg font-bold text-slate-900" id="day-details-title">Data</h3>
+        <button onclick="closeDayDetailsModal()" class="text-slate-400 hover:text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div id="day-details-list" class="space-y-3 max-h-[60vh] overflow-y-auto">
+        <!-- List injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add FAQ Modal -->
+  <div id="add-faq-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddFaqModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Dodaj/Edytuj FAQ</h3>
+      <form id="add-faq-form" class="space-y-4">
+        <input type="hidden" name="id" id="faq-id">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Pytanie</label>
+          <input type="text" name="question" id="faq-question" required class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Odpowiedź</label>
+          <textarea name="answer" id="faq-answer" required rows="4" class="w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Kolejność Wyświetlania</label>
+          <input type="number" name="display_order" id="faq-order" value="0" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeAddFaqModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Zapisz FAQ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Message Modal -->
+  <div id="edit-message-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEditMessageModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Edytuj Wiadomość</h3>
+      <form id="edit-message-form" class="space-y-4">
+        <input type="hidden" name="id" id="msg-id">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Imię i Nazwisko</label>
+                <input type="text" name="name" id="msg-name" class="w-full px-3 py-2 border rounded-md">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Status</label>
+                <select name="status" id="msg-status" class="w-full px-3 py-2 border rounded-md">
+                    <option value="unread">Nieprzeczytane</option>
+                    <option value="read">Przeczytane</option>
+                    <option value="replied">Odpowiedziano</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Email</label>
+                <input type="email" name="email" id="msg-email" class="w-full px-3 py-2 border rounded-md">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Telefon</label>
+                <input type="text" name="phone" id="msg-phone" class="w-full px-3 py-2 border rounded-md">
+            </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Wiadomość</label>
+          <textarea name="message" id="msg-message" rows="4" class="w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeEditMessageModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Zapisz Zmiany</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Reservation Modal -->
+  <div id="edit-reservation-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEditReservationModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Edytuj Rezerwację</h3>
+      <form id="edit-reservation-form" class="space-y-4">
+        <input type="hidden" name="id" id="res-id">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Imię i Nazwisko</label>
+                <input type="text" name="name" id="res-name" class="w-full px-3 py-2 border rounded-md">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Status</label>
+                <select name="status" id="res-status" class="w-full px-3 py-2 border rounded-md">
+                    <option value="pending">Oczekujące</option>
+                    <option value="confirmed">Potwierdzone</option>
+                    <option value="cancelled">Anulowane</option>
+                    <option value="completed">Zakończone</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Email</label>
+                <input type="email" name="email" id="res-email" class="w-full px-3 py-2 border rounded-md">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Telefon</label>
+                <input type="text" name="phone" id="res-phone" class="w-full px-3 py-2 border rounded-md">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Sekcja</label>
+                <input type="text" name="section" id="res-section" class="w-full px-3 py-2 border rounded-md">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Typ Miejsca</label>
+                <select name="plot_type" id="res-plot-type" class="w-full px-3 py-2 border rounded-md">
+                    <option value="single">Pojedyncze</option>
+                    <option value="companion">Podwójne</option>
+                    <option value="family">Rodzinne</option>
+                    <option value="cremation">Urna</option>
+                </select>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <input type="checkbox" name="consultation" id="res-consultation" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <label for="res-consultation" class="cursor-pointer text-slate-700 text-sm">Prośba o Konsultację</label>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Zaplanowana Data</label>
+            <input type="date" name="scheduled_date" id="res-scheduled-date" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Uwagi</label>
+          <textarea name="notes" id="res-notes" rows="3" class="w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeEditReservationModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Zapisz Zmiany</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Section Modal -->
+  <div id="add-section-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddSectionModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Dodaj Nową Sekcję</h3>
+      <form id="add-section-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Nazwa Sekcji (np. C)</label>
+          <input type="text" name="name" required class="w-full px-3 py-2 border rounded-md uppercase" maxlength="5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Opis</label>
+          <input type="text" name="description" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Rzędy</label>
+            <input type="number" name="rows" value="4" min="1" max="20" class="w-full px-3 py-2 border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Kolumny</label>
+            <input type="number" name="cols" value="6" min="1" max="20" class="w-full px-3 py-2 border rounded-md">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeAddSectionModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Dodaj</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Section Modal -->
+  <div id="edit-section-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEditSectionModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Edytuj Sekcję</h3>
+      <form id="edit-section-form" class="space-y-4">
+        <input type="hidden" name="id" id="edit-section-id">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Nazwa Sekcji</label>
+          <input type="text" name="name" id="edit-section-name" required class="w-full px-3 py-2 border rounded-md uppercase" maxlength="5">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Opis</label>
+          <input type="text" name="description" id="edit-section-description" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Rzędy</label>
+            <input type="number" name="rows" id="edit-section-rows" min="1" max="20" class="w-full px-3 py-2 border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Kolumny</label>
+            <input type="number" name="cols" id="edit-section-cols" min="1" max="20" class="w-full px-3 py-2 border rounded-md">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeEditSectionModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Zapisz Zmiany</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add/Edit Article Modal -->
+  <div id="add-article-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddArticleModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-lg shadow-lg p-6 max-h-[90vh] overflow-y-auto">
+      <h3 class="text-lg font-bold mb-4" id="article-modal-title">Dodaj Nowy Artykuł</h3>
+      <form id="add-article-form" class="space-y-4">
+        <input type="hidden" name="id" id="article-id">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Tytuł</label>
+          <input type="text" name="title" id="article-title" required class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Kategoria</label>
+                <select name="category" id="article-category" class="w-full px-3 py-2 border rounded-md">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Czas Czytania</label>
+                <input type="text" name="readTime" id="article-readTime" class="w-full px-3 py-2 border rounded-md" placeholder="np. 5 min czytania">
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-slate-700">Data</label>
+            <input type="date" name="date" id="article-date" class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Fragment</label>
+          <textarea name="excerpt" id="article-excerpt" rows="2" class="w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Treść</label>
+          <textarea name="content" id="article-content" rows="10" class="w-full px-3 py-2 border rounded-md font-mono text-sm"></textarea>
+        </div>
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeAddArticleModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Zapisz Artykuł</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage Categories Modal -->
+  <div id="manage-categories-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCategoriesModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">Zarządzaj Kategoriami</h3>
+        <button onclick="closeCategoriesModal()" class="text-slate-400 hover:text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div class="mb-6">
+        <form id="add-category-form" class="flex gap-2">
+          <input type="text" name="name" required placeholder="Nazwa Nowej Kategorii" class="flex-1 px-3 py-2 border rounded-md text-sm">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">Dodaj</button>
+        </form>
+      </div>
+
+      <div class="border rounded-md overflow-hidden">
+        <ul id="categories-list" class="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+          <!-- Injected via JS -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Grave Modal -->
+  <div id="edit-grave-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEditGraveModal()"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-lg shadow-lg p-6">
+      <h3 class="text-lg font-bold mb-4">Edytuj Grób</h3>
+      <form id="edit-grave-form" class="space-y-4">
+        <input type="hidden" id="edit-grave-id">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Imię i Nazwisko</label>
+          <input type="text" name="name" id="edit-grave-name" required class="w-full px-3 py-2 border rounded-md">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Data Urodzenia</label>
+            <input type="date" name="birthDate" id="edit-grave-birthDate" class="w-full px-3 py-2 border rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Data Śmierci</label>
+            <input type="date" name="deathDate" id="edit-grave-deathDate" class="w-full px-3 py-2 border rounded-md">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Sekcja</label>
+            <input type="text" name="section" id="edit-grave-section" required class="w-full px-3 py-2 border rounded-md bg-slate-50">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Rząd</label>
+            <input type="number" name="row" id="edit-grave-row" required class="w-full px-3 py-2 border rounded-md bg-slate-50">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Miejsce</label>
+            <input type="number" name="plot" id="edit-grave-plot" required class="w-full px-3 py-2 border rounded-md bg-slate-50">
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" onclick="closeEditGraveModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-md">Anuluj</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Zapisz Zmiany</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/admin.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
