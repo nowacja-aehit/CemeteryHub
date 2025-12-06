@@ -47,12 +47,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderArticles();
   renderFAQ();
   setupReservationForm();
+  setupContactForm();
   
   // Re-initialize icons
   if (window.lucide) {
     window.lucide.createIcons();
   }
 });
+
+function setupContactForm() {
+    const form = document.getElementById('contact-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.innerText = 'Wysyłanie...';
+        btn.disabled = true;
+
+        const data = {
+            name: document.getElementById('contact-name').value,
+            email: document.getElementById('contact-email').value,
+            phone: document.getElementById('contact-phone').value,
+            message: document.getElementById('contact-message').value
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/api/contact`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert('Wiadomość została wysłana. Dziękujemy!');
+                form.reset();
+                document.getElementById('contact-modal').classList.add('hidden');
+                document.getElementById('contact-modal').classList.remove('flex');
+            } else {
+                alert('Wystąpił błąd podczas wysyłania wiadomości.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Błąd połączenia z serwerem.');
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
+}
 
 async function loadData() {
   try {
@@ -100,7 +144,10 @@ function setupModals() {
   const modals = {
     'contact-btn': 'contact-modal',
     'faq-btn': 'faq-modal',
-    'reservation-btn': 'reservation-modal'
+    'reservation-btn': 'reservation-modal',
+    'footer-contact-btn': 'contact-modal',
+    'footer-faq-btn': 'faq-modal',
+    'footer-reservation-btn': 'reservation-modal'
   };
 
   Object.keys(modals).forEach(btnId => {
@@ -113,6 +160,15 @@ function setupModals() {
       });
     }
   });
+
+  // Footer Articles Link
+  const footerArticlesBtn = document.getElementById('footer-articles-btn');
+  if (footerArticlesBtn) {
+    footerArticlesBtn.addEventListener('click', () => {
+      switchTab('articles');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 
   document.querySelectorAll('.close-modal').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -374,6 +430,28 @@ function renderServicesForm() {
     e.preventDefault();
     if (!selectedGrave) return;
 
+    // Collect selected services
+    const selectedBaseServiceSlug = serviceSelect.value;
+    const baseService = servicesList.find(s => s.slug === selectedBaseServiceSlug);
+    
+    const selectedAdditionalServices = additionalServicesList.filter(s => {
+        const checkbox = document.getElementById(s.slug);
+        return checkbox && checkbox.checked;
+    });
+
+    const allSelectedServices = [];
+    let calculatedCost = 0;
+
+    if (baseService) {
+        allSelectedServices.push({ name: baseService.name, price: baseService.price, type: 'primary' });
+        calculatedCost += baseService.price;
+    }
+
+    selectedAdditionalServices.forEach(s => {
+        allSelectedServices.push({ name: s.name, price: s.price, type: 'additional' });
+        calculatedCost += s.price;
+    });
+
     // Simulate submission
     const originalBtnText = serviceSubmitBtn.innerText;
     serviceSubmitBtn.innerText = 'Wysyłanie...';
@@ -381,7 +459,9 @@ function renderServicesForm() {
 
     const formData = {
         graveId: selectedGrave.id,
-        serviceType: serviceSelect.value,
+        serviceType: baseService ? baseService.name : 'Inna',
+        services: allSelectedServices,
+        total_cost: calculatedCost,
         date: new Date().toISOString().split('T')[0],
         scheduled_date: serviceForm.querySelector('input[type="date"]').value,
         contactName: serviceForm.querySelector('input[placeholder="Podaj swoje imię i nazwisko"]').value,

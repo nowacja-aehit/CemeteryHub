@@ -19,12 +19,28 @@ export function ContactDialog({ open, onOpenChange }: ContactDialogProps) {
     message: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock submission
-    alert('Thank you for contacting us. We will respond within 24 hours.');
-    onOpenChange(false);
-    setFormData({ name: '', email: '', phone: '', message: '' });
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        alert('Dziękujemy za kontakt. Odpowiemy w ciągu 24 godzin.');
+        onOpenChange(false);
+        setFormData({ name: '', email: '', phone: '', message: '' });
+      } else {
+        alert('Wystąpił błąd podczas wysyłania wiadomości.');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Wystąpił błąd połączenia.');
+    }
   };
 
   return (

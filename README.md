@@ -1,28 +1,53 @@
 # CemeteryHub
 
-Szkielet projektu strony WWW "CemeteryHub".
+System zarządzania cmentarzem z interfejsem dla administratora i użytkownika.
 
-Struktura:
-- `public/` — pliki publiczne (HTML, CSS, JS, assets)
-- `php/` — kod PHP (controllers, models, views, public_html)
-- `python/` — skrypty i API (python/api, python/scripts)
-- `config/` — pliki konfiguracyjne
-- `docs/` — dokumentacja
-- `tests/` — testy
-- `docker/` — pliki konfiguracyjne Dockera (opcjonalnie)
-- `scripts/` — narzędzia i skrypty pomocnicze
-- `vendor/` — zależności zewnętrzne (composer, pip itp.)
+## Technologie
 
-Następne kroki:
-- Wybór frameworka PHP (np. Laravel) i/lub frameworka Python (Flask/FastAPI)
-- Dodać `composer.json` / `requirements.txt` w zależności od potrzeby
-- Jeżeli chcesz — mogę przygotować Dockerfile i plik `docker-compose.yml`.
+- **Backend**: Python (Flask), SQLAlchemy, SQLite
+- **Frontend (Użytkownik)**: React (Vite), Tailwind CSS
+- **Frontend (Administrator)**: Vanilla JavaScript SPA
 
-## Frontend / Design
+## Funkcjonalności
 
-The `cementery/` folder contains the React application based on the Figma design.
-To run it, you need Node.js installed.
-Run `npm install` and `npm run dev` inside the `cementery` folder.
+- **Wyszukiwarka Grobów**: Wyszukiwanie po nazwisku, dacie śmierci i sektorze.
+- **Interaktywna Mapa**: Podgląd lokalizacji grobów.
+- **Zamawianie Usług**: Formularz zgłaszania usług (sprzątanie, opieka).
+- **Panel Administratora**:
+  - Zarządzanie grobami (CRUD)
+  - Zarządzanie artykułami i aktualnościami
+  - Zarządzanie usługami i cennikiem
+  - Obsługa zgłoszeń i rezerwacji
+  - Zarządzanie użytkownikami i uprawnieniami
+  - Statystyki (Dashboard)
 
-A static preview of the design is available in `public/html/index.html`.
+## Uruchomienie
+
+### Backend
+
+1. Przejdź do katalogu głównego.
+2. Zainstaluj zależności: `pip install -r requirements.txt`
+3. Uruchom serwer: `python python/api/app.py`
+   - Serwer działa na porcie `5000`.
+
+### Frontend (Użytkownik)
+
+1. Przejdź do katalogu `cementery`.
+2. Zainstaluj zależności: `npm install`
+3. Uruchom serwer deweloperski: `npm run dev`
+   - Aplikacja dostępna pod adresem `http://localhost:3000`.
+
+### Panel Administratora
+
+Panel administratora jest serwowany przez backend Flask pod adresem `http://localhost:5000/admin`.
+Domyślne dane logowania:
+- Login: `admin`
+- Hasło: `admin123`
+
+## Testy
+
+Aby uruchomić testy jednostkowe:
+```bash
+python tests/test_api.py
+```
 

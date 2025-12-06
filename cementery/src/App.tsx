@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Button } from './components/ui/button';
 import { GraveSearch } from './components/GraveSearch';
@@ -22,27 +22,27 @@ export interface GraveLocation {
   coordinates: { x: number; y: number };
 }
 
-export const graveData: GraveLocation[] = [
-  { id: '1', name: 'John Anderson', birthDate: '1945-03-12', deathDate: '2018-07-22', section: 'A', row: 1, plot: 3, coordinates: { x: 0, y: 2 } },
-  { id: '2', name: 'Mary Thompson', birthDate: '1952-08-15', deathDate: '2020-11-30', section: 'A', row: 1, plot: 5, coordinates: { x: 0, y: 4 } },
-  { id: '3', name: 'Robert Williams', birthDate: '1938-01-20', deathDate: '2019-05-14', section: 'A', row: 2, plot: 2, coordinates: { x: 1, y: 1 } },
-  { id: '4', name: 'Elizabeth Davis', birthDate: '1960-11-03', deathDate: '2021-03-08', section: 'A', row: 2, plot: 4, coordinates: { x: 1, y: 3 } },
-  { id: '5', name: 'James Miller', birthDate: '1942-06-25', deathDate: '2017-12-19', section: 'A', row: 3, plot: 1, coordinates: { x: 2, y: 0 } },
-  { id: '6', name: 'Patricia Brown', birthDate: '1955-09-08', deathDate: '2022-01-15', section: 'A', row: 3, plot: 3, coordinates: { x: 2, y: 2 } },
-  { id: '7', name: 'Michael Johnson', birthDate: '1948-04-17', deathDate: '2019-08-22', section: 'B', row: 1, plot: 2, coordinates: { x: 0, y: 1 } },
-  { id: '8', name: 'Linda Wilson', birthDate: '1963-12-30', deathDate: '2023-06-11', section: 'B', row: 1, plot: 4, coordinates: { x: 0, y: 3 } },
-  { id: '9', name: 'David Martinez', birthDate: '1940-02-14', deathDate: '2018-10-05', section: 'B', row: 2, plot: 1, coordinates: { x: 1, y: 0 } },
-  { id: '10', name: 'Barbara Garcia', birthDate: '1958-07-21', deathDate: '2021-09-28', section: 'B', row: 2, plot: 5, coordinates: { x: 1, y: 4 } },
-  { id: '11', name: 'Richard Rodriguez', birthDate: '1935-05-09', deathDate: '2016-04-13', section: 'B', row: 3, plot: 2, coordinates: { x: 2, y: 1 } },
-  { id: '12', name: 'Susan Lee', birthDate: '1961-10-28', deathDate: '2022-07-30', section: 'B', row: 3, plot: 4, coordinates: { x: 2, y: 3 } },
-];
-
 export default function App() {
+  const [graves, setGraves] = useState<GraveLocation[]>([]);
   const [selectedGrave, setSelectedGrave] = useState<GraveLocation | null>(null);
   const [activeTab, setActiveTab] = useState('search');
   const [contactOpen, setContactOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
   const [reservationOpen, setReservationOpen] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/graves')
+      .then(res => res.json())
+      .then(data => {
+        // Ensure ID is string
+        const formattedData = data.map((g: any) => ({
+          ...g,
+          id: String(g.id)
+        }));
+        setGraves(formattedData);
+      })
+      .catch(err => console.error('Failed to fetch graves:', err));
+  }, []);
 
   const handleGraveSelect = (grave: GraveLocation) => {
     setSelectedGrave(grave);
@@ -117,7 +117,7 @@ export default function App() {
 
           <TabsContent value="search">
             <GraveSearch 
-              graves={graveData} 
+              graves={graves} 
               onGraveSelect={handleGraveSelect}
               onServiceOrder={handleServiceOrder}
             />
@@ -125,7 +125,7 @@ export default function App() {
 
           <TabsContent value="map">
             <CemeteryMap 
-              graves={graveData}
+              graves={graves}
               selectedGrave={selectedGrave}
               onGraveSelect={setSelectedGrave}
             />

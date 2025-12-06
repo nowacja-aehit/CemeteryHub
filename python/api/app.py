@@ -1,13 +1,17 @@
 import os
+import json
+import subprocess
+import sys
+import platform
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Konfiguracja aplikacji
 app = Flask(__name__, static_folder='../../public')
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Konfiguracja bazy danych
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -39,7 +43,8 @@ class Grave(db.Model):
     section = db.Column(db.String(10))
     row = db.Column(db.String(10))
     plot = db.Column(db.String(10))
-    coordinates = db.Column(db.String(50)) # Przechowywane jako "x,y"
+    coord_x = db.Column(db.Integer)
+    coord_y = db.Column(db.Integer)
 
     def to_dict(self):
         return {
@@ -50,33 +55,51 @@ class Grave(db.Model):
             'section': self.section,
             'row': self.row,
             'plot': self.plot,
-            'coordinates': self.coordinates
+            'coordinates': f"{self.coord_x},{self.coord_y}" if self.coord_x is not None and self.coord_y is not None else "0,0"
         }
 
 class ServiceRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     grave_id = db.Column(db.Integer, db.ForeignKey('grave.id'), nullable=False)
     service_type = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.String(20), default='Oczekujące')
-    contact_name = db.Column(db.String(100))
-    contact_email = db.Column(db.String(100))
-    contact_phone = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='pending')
+    customer_name = db.Column(db.String(100))
+    email = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
     notes = db.Column(db.Text)
     scheduled_date = db.Column(db.String(20))
+    services = db.Column(db.Text)
+    total_cost = db.Column(db.Float)
+    discount = db.Column(db.Float)
+    admin_notes = db.Column(db.Text)
 
     def to_dict(self):
+        raw_status = (self.status or 'pending').lower()
+        if raw_status in ['oczekujące', 'oczekujace']:
+            status_value = 'pending'
+        elif raw_status in ['w trakcie', 'in-progress', 'in progress']:
+            status_value = 'in_progress'
+        elif raw_status in ['zakończone', 'zakonczone']:
+            status_value = 'completed'
+        else:
+            status_value = self.status or 'pending'
+
         return {
             'id': self.id,
             'graveId': self.grave_id,
             'serviceType': self.service_type,
-            'date': self.date,
-            'status': self.status,
-            'contactName': self.contact_name,
-            'contactEmail': self.contact_email,
-            'contactPhone': self.contact_phone,
+            'date': self.created_at.strftime('%Y-%m-%d') if self.created_at else '',
+            'status': status_value,
+            'contactName': self.customer_name,
+            'contactEmail': self.email,
+            'contactPhone': self.phone,
             'notes': self.notes,
-            'scheduled_date': self.scheduled_date
+            'scheduled_date': self.scheduled_date,
+            'services': json.loads(self.services) if self.services else [],
+            'total_cost': self.total_cost or 0,
+            'discount': self.discount or 0,
+            'admin_notes': self.admin_notes or ''
         }
 
 class Reservation(db.Model):
@@ -84,9 +107,14 @@ class Reservation(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
-    date = db.Column(db.String(20))
-    message = db.Column(db.Text)
+    section = db.Column(db.String(50))
+    plot_type = db.Column(db.String(50))
+    consultation = db.Column(db.Boolean)
+    notes = db.Column(db.Text)
+    admin_notes = db.Column(db.Text)
     status = db.Column(db.String(20), default='Nowa')
+    scheduled_date = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
@@ -94,25 +122,30 @@ class Reservation(db.Model):
             'name': self.name,
             'email': self.email,
             'phone': self.phone,
-            'date': self.date,
-            'message': self.message,
-            'status': self.status
+            'section': self.section,
+            'plot_type': self.plot_type,
+            'consultation': self.consultation,
+            'notes': self.notes,
+            'admin_notes': self.admin_notes,
+            'status': self.status,
+            'scheduled_date': self.scheduled_date,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else ''
         }
 
 class Section(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
-    rows = db.Column(db.Integer)
-    cols = db.Column(db.Integer)
+    total_rows = db.Column(db.Integer)
+    total_cols = db.Column(db.Integer)
 
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
             'description': self.description,
-            'rows': self.rows,
-            'cols': self.cols
+            'rows': self.total_rows,
+            'cols': self.total_cols
         }
 
 class Article(db.Model):
@@ -123,6 +156,7 @@ class Article(db.Model):
     date = db.Column(db.String(20))
     excerpt = db.Column(db.Text)
     read_time = db.Column(db.String(20))
+    is_visible = db.Column(db.Boolean, default=True)
 
     def to_dict(self):
         return {
@@ -132,7 +166,8 @@ class Article(db.Model):
             'category': self.category,
             'date': self.date,
             'excerpt': self.excerpt,
-            'readTime': self.read_time
+            'readTime': self.read_time,
+            'isVisible': self.is_visible
         }
 
 class Service(db.Model):
@@ -155,16 +190,22 @@ class ContactMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
     message = db.Column(db.Text)
-    date = db.Column(db.String(20))
+    status = db.Column(db.String(20), default='Nowa')
+    admin_notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
             'email': self.email,
+            'phone': self.phone,
             'message': self.message,
-            'date': self.date
+            'status': self.status,
+            'admin_notes': self.admin_notes,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else ''
         }
 
 class FAQ(db.Model):
@@ -215,13 +256,187 @@ def login():
 
     user = User.query.filter_by(username=username).first()
     if user and user.check_password(password):
-        return jsonify({'message': 'Zalogowano pomyślnie', 'token': 'fake-jwt-token', 'success': True}), 200
+        user_payload = {
+            'id': user.id,
+            'username': user.username,
+            'role': user.role
+        }
+        return jsonify({
+            'message': 'Zalogowano pomyślnie',
+            'token': 'fake-jwt-token',
+            'success': True,
+            'user': user_payload
+        }), 200
     
     return jsonify({'message': 'Błędny login lub hasło', 'success': False}), 401
 
+# --- Admin API ---
+
+@app.route('/api/admin/dashboard', methods=['GET'])
+def get_dashboard_data():
+    try:
+        # Stats
+        graves_count = Grave.query.count()
+        
+        # Count pending requests (handle various status strings)
+        pending_statuses = ['pending', 'Nowe', 'Oczekujące', 'oczekujace', 'new']
+        requests_count = ServiceRequest.query.filter(ServiceRequest.status.in_(pending_statuses)).count()
+        
+        messages_count = ContactMessage.query.filter(ContactMessage.status == 'Nowa').count()
+        reservations_count = Reservation.query.filter(Reservation.status == 'Nowa').count()
+
+        # Calendar Events
+        events = []
+
+        # Service Requests
+        requests = ServiceRequest.query.all()
+        for req in requests:
+            # Prefer scheduled_date, fallback to created_at
+            date_str = req.scheduled_date
+            if not date_str and req.created_at:
+                date_str = req.created_at.strftime('%Y-%m-%d')
+            
+            if date_str:
+                # Normalize date format if needed, assuming YYYY-MM-DD stored
+                events.append({
+                    'id': f'req_{req.id}',
+                    'title': f'Usługa: {req.service_type}',
+                    'date': date_str,
+                    'type': 'request',
+                    'status': req.status,
+                    'details': f'Klient: {req.customer_name}'
+                })
+
+        # Reservations
+        reservations = Reservation.query.all()
+        for res in reservations:
+            date_str = res.scheduled_date
+            if not date_str and res.created_at:
+                date_str = res.created_at.strftime('%Y-%m-%d')
+                
+            if date_str:
+                events.append({
+                    'id': f'res_{res.id}',
+                    'title': f'Rezerwacja: {res.section or "Brak sekcji"}',
+                    'date': date_str,
+                    'type': 'reservation',
+                    'status': res.status,
+                    'details': f'Klient: {res.name}'
+                })
+
+        # Messages
+        messages = ContactMessage.query.all()
+        for msg in messages:
+            if msg.created_at:
+                events.append({
+                    'id': f'msg_{msg.id}',
+                    'title': f'Wiadomość od {msg.name}',
+                    'date': msg.created_at.strftime('%Y-%m-%d'),
+                    'type': 'message',
+                    'status': msg.status,
+                    'details': msg.message[:50] + '...' if msg.message else ''
+                })
+
+        return jsonify({
+            'stats': {
+                'graves': graves_count,
+                'requests': requests_count,
+                'messages': messages_count,
+                'reservations': reservations_count
+            },
+            'events': events
+        })
+    except Exception as e:
+        print(f"Dashboard Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    return jsonify([{
+        'id': u.id,
+        'username': u.username,
+        'role': u.role
+    } for u in users])
+
+@app.route('/api/admin/users', methods=['POST'])
+def add_user():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    role = data.get('role', 'user')
+
+    if not username or not password:
+        return jsonify({'message': 'Username and password are required'}), 400
+    
+    if User.query.filter_by(username=username).first():
+        return jsonify({'message': 'Username already exists'}), 400
+
+    new_user = User(username=username, role=role)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+    
+    return jsonify({
+        'id': new_user.id,
+        'username': new_user.username,
+        'role': new_user.role
+    }), 201
+
+@app.route('/api/admin/users/<int:id>', methods=['PUT'])
+def update_user(id):
+    user = User.query.get_or_404(id)
+    data = request.json
+    
+    if 'username' in data:
+        existing = User.query.filter_by(username=data['username']).first()
+        if existing and existing.id != id:
+            return jsonify({'message': 'Username already exists'}), 400
+        user.username = data['username']
+        
+    if 'password' in data and data['password']:
+        user.set_password(data['password'])
+        
+    if 'role' in data:
+        user.role = data['role']
+        
+    db.session.commit()
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'role': user.role
+    })
+
+@app.route('/api/admin/users/<int:id>', methods=['DELETE'])
+def delete_user(id):
+    user = User.query.get_or_404(id)
+    if user.username == 'admin': # Prevent deleting the main admin
+        return jsonify({'message': 'Cannot delete main admin user'}), 403
+        
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User deleted'})
+
 @app.route('/api/graves', methods=['GET'])
 def get_graves():
-    graves = Grave.query.all()
+    query = Grave.query
+    
+    # Filter by name
+    name = request.args.get('name')
+    if name:
+        query = query.filter(Grave.name.ilike(f'%{name}%'))
+        
+    # Filter by year of death
+    year = request.args.get('year')
+    if year:
+        query = query.filter(Grave.death_date.contains(year))
+        
+    # Filter by section
+    section = request.args.get('section')
+    if section:
+        query = query.filter(Grave.section.ilike(section))
+
+    graves = query.all()
     return jsonify([g.to_dict() for g in graves])
 
 @app.route('/api/admin/graves', methods=['GET'])
@@ -232,8 +447,15 @@ def get_admin_graves():
 def add_grave():
     data = request.json
     coordinates = data.get('coordinates', '0,0')
+    cx, cy = 0, 0
     if isinstance(coordinates, dict):
-        coordinates = f"{coordinates.get('x', 0)},{coordinates.get('y', 0)}"
+        cx = int(coordinates.get('x', 0))
+        cy = int(coordinates.get('y', 0))
+    elif isinstance(coordinates, str) and ',' in coordinates:
+        parts = coordinates.split(',')
+        if len(parts) >= 2:
+            cx = int(parts[0])
+            cy = int(parts[1])
 
     new_grave = Grave(
         name=data.get('name'),
@@ -242,7 +464,8 @@ def add_grave():
         section=data.get('section'),
         row=data.get('row'),
         plot=data.get('plot'),
-        coordinates=coordinates
+        coord_x=cx,
+        coord_y=cy
     )
     db.session.add(new_grave)
     db.session.commit()
@@ -266,9 +489,19 @@ def update_grave(id):
     coordinates = data.get('coordinates')
     if coordinates:
         if isinstance(coordinates, dict):
-            grave.coordinates = f"{coordinates.get('x', 0)},{coordinates.get('y', 0)}"
+            grave.coord_x = int(coordinates.get('x', 0))
+            grave.coord_y = int(coordinates.get('y', 0))
+        elif isinstance(coordinates, str) and ',' in coordinates:
+            parts = coordinates.split(',')
+            if len(parts) >= 2:
+                grave.coord_x = int(parts[0])
+                grave.coord_y = int(parts[1])
+            else:
+                # Fallback or ignore
+                pass
         else:
-            grave.coordinates = coordinates
+             # Handle other cases or ignore
+             pass
 
     db.session.commit()
     return jsonify(grave.to_dict())
@@ -289,15 +522,38 @@ def delete_admin_grave(id):
 @app.route('/api/service-requests', methods=['POST'])
 def add_service_request():
     data = request.json
+    services = data.get('services') or []
+    if not isinstance(services, list):
+        services = [services]
+    total_cost = data.get('total_cost')
+    try:
+        total_cost = float(total_cost) if total_cost is not None else None
+    except (TypeError, ValueError):
+        total_cost = None
+
+    # Parse date
+    date_str = data.get('date')
+    created_at = datetime.now()
+    if date_str:
+        try:
+            created_at = datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            pass
+
     new_request = ServiceRequest(
         grave_id=data.get('graveId') or data.get('grave_id'),
         service_type=data.get('serviceType') or data.get('service_type'),
-        date=data.get('date') or datetime.now().strftime('%Y-%m-%d'),
-        contact_name=data.get('contactName') or data.get('customer_name'),
-        contact_email=data.get('contactEmail') or data.get('email'),
-        contact_phone=data.get('contactPhone'),
+        created_at=created_at,
+        status=data.get('status') or 'pending',
+        customer_name=data.get('contactName') or data.get('customer_name'),
+        email=data.get('contactEmail') or data.get('email'),
+        phone=data.get('contactPhone'),
         notes=data.get('notes'),
-        scheduled_date=data.get('scheduled_date')
+        scheduled_date=data.get('scheduled_date'),
+        services=json.dumps(services) if services else None,
+        total_cost=total_cost,
+        discount=data.get('discount'),
+        admin_notes=data.get('admin_notes')
     )
     db.session.add(new_request)
     db.session.commit()
@@ -308,13 +564,34 @@ def get_service_requests():
     requests = ServiceRequest.query.all()
     return jsonify([r.to_dict() for r in requests])
 
-@app.route('/api/admin/service-requests/<int:id>', methods=['PUT'])
+@app.route('/api/admin/service-requests/<int:id>', methods=['PUT', 'PATCH'])
 def update_service_request(id):
     req = ServiceRequest.query.get_or_404(id)
     data = request.json
     req.status = data.get('status', req.status)
     req.notes = data.get('notes', req.notes)
     req.scheduled_date = data.get('scheduled_date', req.scheduled_date)
+    req.customer_name = data.get('customer_name', data.get('contact_name', req.customer_name))
+    req.email = data.get('email', data.get('contact_email', req.email))
+    req.phone = data.get('phone', data.get('contact_phone', req.phone))
+    services = data.get('services')
+    if services is not None:
+        if not isinstance(services, list):
+            services = [services]
+        req.services = json.dumps(services)
+    total_cost = data.get('total_cost')
+    if total_cost is not None:
+        try:
+            req.total_cost = float(total_cost)
+        except (TypeError, ValueError):
+            pass
+    if 'discount' in data:
+        try:
+            req.discount = float(data.get('discount')) if data.get('discount') is not None else None
+        except (TypeError, ValueError):
+            pass
+    if 'admin_notes' in data:
+        req.admin_notes = data.get('admin_notes')
     db.session.commit()
     return jsonify(req.to_dict())
 
@@ -325,6 +602,14 @@ def delete_service_request(id):
     db.session.commit()
     return jsonify({'message': 'Zgłoszenie usunięte'})
 
+@app.route('/api/admin/service-requests/<int:id>/status', methods=['PATCH'])
+def update_service_request_status(id):
+    req = ServiceRequest.query.get_or_404(id)
+    data = request.json or {}
+    req.status = data.get('status', req.status)
+    db.session.commit()
+    return jsonify(req.to_dict())
+
 # --- Reservations Endpoints ---
 
 @app.route('/api/reservations', methods=['POST'])
@@ -334,8 +619,11 @@ def add_reservation():
         name=data.get('name'),
         email=data.get('email'),
         phone=data.get('phone'),
-        date=data.get('date'),
-        message=data.get('message')
+        section=data.get('section'),
+        plot_type=data.get('plot_type'),
+        consultation=data.get('consultation', False),
+        notes=data.get('message') or data.get('notes'),
+        scheduled_date=data.get('date') # Mapping 'date' from frontend to 'scheduled_date' or just storing it
     )
     db.session.add(new_reservation)
     db.session.commit()
@@ -351,6 +639,17 @@ def update_reservation(id):
     reservation = Reservation.query.get_or_404(id)
     data = request.json
     reservation.status = data.get('status', reservation.status)
+    reservation.name = data.get('name', reservation.name)
+    reservation.email = data.get('email', reservation.email)
+    reservation.phone = data.get('phone', reservation.phone)
+    reservation.section = data.get('section', reservation.section)
+    reservation.plot_type = data.get('plot_type', reservation.plot_type)
+    reservation.scheduled_date = data.get('scheduled_date', reservation.scheduled_date)
+    reservation.notes = data.get('notes', reservation.notes)
+    reservation.admin_notes = data.get('admin_notes', reservation.admin_notes)
+    if 'consultation' in data:
+        reservation.consultation = bool(data.get('consultation'))
+    
     db.session.commit()
     return jsonify(reservation.to_dict())
 
@@ -401,29 +700,68 @@ def delete_service(id):
 
 # --- Contact Endpoints ---
 
-@app.route('/api/contact', methods=['POST'])
+@app.route('/api/contact', methods=['POST', 'OPTIONS'])
 def submit_contact():
-    data = request.json
-    new_message = ContactMessage(
-        name=data.get('name'),
-        email=data.get('email'),
-        message=data.get('message'),
-        date=data.get('date')
-    )
-    db.session.add(new_message)
-    db.session.commit()
-    return jsonify({'message': 'Wiadomość wysłana'}), 201
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
+        name = data.get('name')
+        email = data.get('email')
+        phone = data.get('phone')
+        message = data.get('message')
+        
+        if not all([name, email, message]):
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        new_message = ContactMessage(
+            name=name,
+            email=email,
+            phone=phone,
+            message=message,
+            created_at=datetime.utcnow()
+        )
+        
+        db.session.add(new_message)
+        db.session.commit()
+        
+        return jsonify({'message': 'Message sent successfully'}), 201
+        
+    except Exception as e:
+        print(f"Error in submit_contact: {e}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/contact', methods=['GET'])
 def get_contact_messages():
     messages = ContactMessage.query.all()
     return jsonify([m.to_dict() for m in messages])
 
+@app.route('/api/admin/contact/<int:id>', methods=['PUT'])
+def update_contact_message(id):
+    message = ContactMessage.query.get_or_404(id)
+    data = request.json
+    message.status = data.get('status', message.status)
+    message.admin_notes = data.get('admin_notes', message.admin_notes)
+    db.session.commit()
+    return jsonify(message.to_dict())
+
+@app.route('/api/admin/contact/<int:id>', methods=['DELETE'])
+def delete_contact_message(id):
+    message = ContactMessage.query.get_or_404(id)
+    db.session.delete(message)
+    db.session.commit()
+    return jsonify({'message': 'Wiadomość usunięta'})
+
 # --- FAQ Endpoints ---
 
 @app.route('/api/faqs', methods=['GET'])
 def get_faqs():
-    faqs = FAQ.query.all()
+    faqs = FAQ.query.order_by(FAQ.display_order.asc()).all()
     return jsonify([f.to_dict() for f in faqs])
 
 @app.route('/api/admin/faqs', methods=['POST'])
@@ -459,6 +797,11 @@ def delete_faq(id):
 
 @app.route('/api/articles', methods=['GET'])
 def get_articles():
+    articles = Article.query.filter_by(is_visible=True).all()
+    return jsonify([a.to_dict() for a in articles])
+
+@app.route('/api/admin/articles', methods=['GET'])
+def get_admin_articles():
     articles = Article.query.all()
     return jsonify([a.to_dict() for a in articles])
 
@@ -471,7 +814,8 @@ def add_article():
         category=data.get('category'),
         date=data.get('date'),
         excerpt=data.get('excerpt'),
-        read_time=data.get('readTime')
+        read_time=data.get('readTime'),
+        is_visible=data.get('isVisible', True)
     )
     db.session.add(new_article)
     db.session.commit()
@@ -487,6 +831,8 @@ def update_article(id):
     article.date = data.get('date', article.date)
     article.excerpt = data.get('excerpt', article.excerpt)
     article.read_time = data.get('readTime', article.read_time)
+    if 'isVisible' in data:
+        article.is_visible = data.get('isVisible')
     db.session.commit()
     return jsonify(article.to_dict())
 
@@ -510,8 +856,8 @@ def add_section():
     new_section = Section(
         name=data.get('name'),
         description=data.get('description'),
-        rows=data.get('rows'),
-        cols=data.get('cols')
+        total_rows=data.get('rows'),
+        total_cols=data.get('cols')
     )
     db.session.add(new_section)
     db.session.commit()
@@ -523,8 +869,8 @@ def update_section(id):
     data = request.json
     section.name = data.get('name', section.name)
     section.description = data.get('description', section.description)
-    section.rows = data.get('rows', section.rows)
-    section.cols = data.get('cols', section.cols)
+    section.total_rows = data.get('rows', section.total_rows)
+    section.total_cols = data.get('cols', section.total_cols)
     db.session.commit()
     return jsonify(section.to_dict())
 
@@ -551,6 +897,129 @@ def add_category():
     return jsonify(new_category.to_dict()), 201
 
 @app.route('/api/admin/categories/<int:id>', methods=['DELETE'])
+# --- DevTools API ---
+
+@app.route('/api/admin/dev/system-info', methods=['GET'])
+def get_system_info():
+    try:
+        info = {
+            'os': platform.system(),
+            'os_release': platform.release(),
+            'python_version': sys.version,
+            'db_path': db_path,
+            'graves_count': Grave.query.count(),
+            'users_count': User.query.count(),
+            'requests_count': ServiceRequest.query.count()
+        }
+        return jsonify(info)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/dev/run-tests', methods=['GET'])
+def run_tests():
+    def generate():
+        try:
+            tests_dir = os.path.join(basedir, '../../tests')
+            test_files = [f for f in os.listdir(tests_dir) if f.startswith('test_') and f.endswith('.py')]
+            
+            # Sort files numerically if possible (test_1, test_2, test_10)
+            def sort_key(f):
+                parts = f.split('_')
+                if len(parts) > 1 and parts[1].isdigit():
+                    return int(parts[1])
+                return f
+            
+            test_files.sort(key=sort_key)
+            
+            for test_file in test_files:
+                start_time = datetime.now()
+                process = subprocess.run(
+                    [sys.executable, os.path.join('tests', test_file)],
+                    capture_output=True,
+                    text=True,
+                    cwd=os.path.join(basedir, '../../')
+                )
+                duration = (datetime.now() - start_time).total_seconds()
+                
+                result = {
+                    'name': test_file,
+                    'status': 'PASS' if process.returncode == 0 else 'FAIL',
+                    'output': process.stdout + process.stderr,
+                    'duration': duration
+                }
+                yield f"data: {json.dumps(result)}\n\n"
+                
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype='text/event-stream', headers={
+        'X-Accel-Buffering': 'no',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    })
+
+@app.route('/api/admin/dev/seed-data', methods=['POST'])
+def seed_data():
+    try:
+        # Add some sample graves
+        sections = Section.query.all()
+        if not sections:
+             sections = [
+                Section(name='A', description='Sektor główny', total_rows=4, total_cols=6),
+                Section(name='B', description='Sektor boczny', total_rows=4, total_cols=6)
+            ]
+             db.session.bulk_save_objects(sections)
+             db.session.commit()
+             sections = Section.query.all()
+
+        import random
+        names = ["Jan", "Anna", "Piotr", "Maria", "Krzysztof", "Barbara", "Andrzej", "Ewa"]
+        surnames = ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kowalczyk", "Kamiński", "Lewandowski", "Zieliński"]
+        
+        new_graves = []
+        for _ in range(10):
+            name = f"{random.choice(names)} {random.choice(surnames)}"
+            section = random.choice(sections).name
+            grave = Grave(
+                name=name,
+                birth_date=f"19{random.randint(20, 90)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
+                death_date=f"20{random.randint(0, 23)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
+                section=section,
+                row=str(random.randint(1, 10)),
+                plot=str(random.randint(1, 10)),
+                coord_x=0,
+                coord_y=0
+            )
+            new_graves.append(grave)
+        
+        db.session.bulk_save_objects(new_graves)
+        db.session.commit()
+        return jsonify({'message': f'Dodano {len(new_graves)} przykładowych grobów'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/dev/clear-data', methods=['POST'])
+def clear_data():
+    try:
+        # Delete all data except admin user
+        Grave.query.delete()
+        ServiceRequest.query.delete()
+        Reservation.query.delete()
+        ContactMessage.query.delete()
+        Article.query.delete()
+        FAQ.query.delete()
+        Service.query.delete()
+        Section.query.delete()
+        
+        # Delete non-admin users
+        User.query.filter(User.username != 'admin').delete()
+        
+        db.session.commit()
+        return jsonify({'message': 'Baza danych wyczyszczona (zachowano konto admin)'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 def delete_category(id):
     category = Category.query.get_or_404(id)
     db.session.delete(category)
@@ -570,87 +1039,8 @@ def init_db():
             db.session.add(admin)
             db.session.commit()
             print("Utworzono użytkownika admin/admin123")
-        
-        # Dodaj przykładowe dane jeśli baza pusta
-        if not Grave.query.first():
-            sample_grave = Grave(
-                name="Jan Kowalski",
-                birth_date="1950-01-01",
-                death_date="2020-12-31",
-                section="A",
-                row="1",
-                plot="1",
-                coordinates="0,0"
-            )
-            db.session.add(sample_grave)
-            db.session.commit()
-            print("Dodano przykładowe dane")
-
-        # Dodaj przykładowe sekcje
-        if not Section.query.first():
-            sections = [
-                Section(name='A', description='Sektor główny', rows=4, cols=6),
-                Section(name='B', description='Sektor boczny', rows=4, cols=6)
-            ]
-            db.session.bulk_save_objects(sections)
-            db.session.commit()
-            print("Dodano przykładowe sekcje")
-
-        # Dodaj przykładowe artykuły
-        if not Article.query.first():
-            articles = [
-                Article(
-                    title='Wybór odpowiedniego materiału na nagrobek: kompletny przewodnik',
-                    excerpt='Zrozumienie różnic pomiędzy granitem, marmurem i brązem może pomóc Ci podjąć świadomą decyzję, która będzie trwała przez pokolenia.',
-                    content='Tutaj znajduje się pełna treść artykułu o wyborze materiałów na nagrobek. Granit jest najtrwalszy, marmur piękny ale delikatny, a brąz klasyczny.',
-                    date='2024-11-15',
-                    category='Materiały',
-                    read_time='5 minut czytania'
-                ),
-                Article(
-                    title='Konserwacja nagrobków: porady dotyczące pielęgnacji sezonowej',
-                    excerpt='Dowiedz się, jak prawidłowo pielęgnować i konserwować nagrobki w różnych porach roku, aby zachować ich piękno i integralność.',
-                    content='Pełna treść artykułu o konserwacji. Wiosną należy usunąć liście, latem myć wodą, jesienią zabezpieczyć przed mrozem.',
-                    date='2024-11-10',
-                    category='Konserwacja',
-                    read_time='4 minuty czytania'
-                ),
-                Article(
-                    title='Historia symboliki cmentarnej',
-                    excerpt='Odkryj znaczenie symboli powszechnie spotykanych na nagrobkach – od aniołów i gołębi po krzyże i kwiaty.',
-                    content='Pełna treść o symbolice. Anioł oznacza opiekę, gołąb pokój, a złamana kolumna przerwane życie.',
-                    date='2024-11-05',
-                    category='Historia',
-                    read_time='7 minut czytania'
-                )
-            ]
-            db.session.bulk_save_objects(articles)
-            db.session.commit()
-            print("Dodano przykładowe artykuły")
-
-        # Dodaj przykładowe FAQ
-        if not FAQ.query.first():
-            faqs = [
-                FAQ(question='Jak znaleźć grób?', answer='Użyj wyszukiwarki na stronie głównej wpisując imię i nazwisko zmarłego.'),
-                FAQ(question='Jak zamówić usługę?', answer='Przejdź do zakładki "Usługi", wybierz grób i wypełnij formularz.'),
-                FAQ(question='Czy cmentarz jest otwarty w święta?', answer='Tak, cmentarz jest otwarty codziennie od 7:00 do 21:00.'),
-                FAQ(question='Jak zgłosić usterkę?', answer='Skontaktuj się z biurem administracji telefonicznie lub mailowo.')
-            ]
-            db.session.bulk_save_objects(faqs)
-            db.session.commit()
-            print("Dodano przykładowe FAQ")
-
-        # Dodaj przykładowe usługi
-        if not Service.query.first():
-            services = [
-                Service(name='Czyszczenie nagrobków', slug='czyszczenie', price=150.0, category='primary'),
-                Service(name='Naprawa nagrobków', slug='naprawa', price=300.0, category='primary')
-            ]
-            db.session.bulk_save_objects(services)
-            db.session.commit()
-            print("Dodano przykładowe usługi")
 
 if __name__ == '__main__':
     init_db()
     print("Serwer uruchomiony na http://localhost:5000")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, use_reloader=True)

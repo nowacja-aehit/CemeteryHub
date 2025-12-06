@@ -13,24 +13,51 @@ interface GraveSearchProps {
 
 export function GraveSearch({ graves, onGraveSelect, onServiceOrder }: GraveSearchProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchYear, setSearchYear] = useState('');
+  const [searchSection, setSearchSection] = useState('');
 
-  const filteredGraves = graves.filter(grave =>
-    grave.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredGraves = graves.filter(grave => {
+    const matchesName = grave.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesYear = searchYear ? grave.deathDate.includes(searchYear) : true;
+    const matchesSection = searchSection ? grave.section.toLowerCase().includes(searchSection.toLowerCase()) : true;
+    return matchesName && matchesYear && matchesSection;
+  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Search Bar */}
       <Card className="p-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-slate-400" />
-          <Input
-            type="text"
-            placeholder="Search by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Search by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Year of death..."
+              value={searchYear}
+              onChange={(e) => setSearchYear(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 size-5 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Section..."
+              value={searchSection}
+              onChange={(e) => setSearchSection(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
       </Card>
 

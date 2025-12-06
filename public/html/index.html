@@ -47,15 +47,38 @@
 
   <!-- Modals -->
   <div id="contact-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative max-h-[90vh] overflow-y-auto">
       <button class="close-modal absolute top-2 right-2 text-gray-500 hover:text-gray-700">&times;</button>
       <h2 class="text-xl font-bold mb-4">Kontakt</h2>
-      <p class="mb-2">Skontaktuj się z nami:</p>
-      <ul class="list-disc pl-5 space-y-1">
-        <li>Telefon: +48 123 456 789</li>
-        <li>Email: kontakt@cemeteryhub.pl</li>
-        <li>Adres: ul. Cmentarna 1, 00-001 Warszawa</li>
-      </ul>
+      
+      <div class="mb-6 space-y-2 text-sm text-slate-600">
+        <p class="flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4"></i> +48 123 456 789</p>
+        <p class="flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4"></i> kontakt@cemeteryhub.pl</p>
+        <p class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> ul. Cmentarna 1, 00-001 Warszawa</p>
+      </div>
+
+      <hr class="my-4 border-slate-200">
+
+      <h3 class="font-semibold mb-3">Wyślij wiadomość</h3>
+      <form id="contact-form" class="space-y-4" onsubmit="return false;">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Imię i Nazwisko</label>
+            <input type="text" id="contact-name" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <input type="email" id="contact-email" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Telefon</label>
+            <input type="tel" id="contact-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Wiadomość</label>
+            <textarea id="contact-message" required rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-slate-900 text-white py-2 rounded hover:bg-slate-800 transition-colors">Wyślij wiadomość</button>
+      </form>
     </div>
   </div>
 
@@ -73,7 +96,7 @@
     <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
       <button class="close-modal absolute top-2 right-2 text-gray-500 hover:text-gray-700">&times;</button>
       <h2 class="text-xl font-bold mb-4">Rezerwacja miejsca</h2>
-      <form id="reservation-form" class="space-y-4">
+      <form id="reservation-form" class="space-y-4" onsubmit="return false;">
         <div>
             <label class="block text-sm font-medium text-gray-700">Imię i Nazwisko</label>
             <input type="text" id="res-name" required class="w-full px-3 py-2 border border-gray-300 rounded-md">
@@ -209,7 +232,7 @@
               <!-- Injected via JS -->
             </div>
 
-            <form id="service-form" class="space-y-6">
+            <form id="service-form" class="space-y-6" onsubmit="return false;">
               <!-- Contact Info -->
               <div class="space-y-4">
                 <h3 class="font-semibold text-slate-900">Informacje kontaktowe</h3>
@@ -302,10 +325,10 @@
         <div>
           <h3 class="font-semibold mb-4">Quick Links</h3>
           <div class="space-y-2 text-sm">
-            <a href="#" class="block text-slate-300 hover:text-white transition-colors">Kontakt</a>
-            <a href="#" class="block text-slate-300 hover:text-white transition-colors">FAQ</a>
-            <a href="#" class="block text-slate-300 hover:text-white transition-colors">Rezerwacje</a>
-            <a href="#" class="block text-slate-300 hover:text-white transition-colors">Artykuły</a>
+            <button id="footer-contact-btn" class="block text-slate-300 hover:text-white transition-colors text-left w-full">Kontakt</button>
+            <button id="footer-faq-btn" class="block text-slate-300 hover:text-white transition-colors text-left w-full">FAQ</button>
+            <button id="footer-reservation-btn" class="block text-slate-300 hover:text-white transition-colors text-left w-full">Rezerwacje</button>
+            <button id="footer-articles-btn" class="block text-slate-300 hover:text-white transition-colors text-left w-full">Artykuły</button>
           </div>
         </div>
         <div>

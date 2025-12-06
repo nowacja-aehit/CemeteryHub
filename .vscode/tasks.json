@@ -24,6 +24,39 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "none"
+		},
+		{
+			"label": "Run API Tests",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"tests/test_api.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Run Full System Tests",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"tests/test_full_system.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Run Full System Tests 2",
+			"type": "shell",
+			"command": "python",
+			"args": [
+				"tests/test_full_system.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
 		}
 	]
 }
