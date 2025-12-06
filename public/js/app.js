@@ -1,83 +1,83 @@
 // Grave Data
 const graveData = [
-  { id: '1', name: 'John Anderson', birthDate: '1945-03-12', deathDate: '2018-07-22', section: 'A', row: 1, plot: 3, coordinates: { x: 0, y: 2 } },
-  { id: '2', name: 'Mary Thompson', birthDate: '1952-08-15', deathDate: '2020-11-30', section: 'A', row: 1, plot: 5, coordinates: { x: 0, y: 4 } },
-  { id: '3', name: 'Robert Williams', birthDate: '1938-01-20', deathDate: '2019-05-14', section: 'A', row: 2, plot: 2, coordinates: { x: 1, y: 1 } },
-  { id: '4', name: 'Elizabeth Davis', birthDate: '1960-11-03', deathDate: '2021-03-08', section: 'A', row: 2, plot: 4, coordinates: { x: 1, y: 3 } },
-  { id: '5', name: 'James Miller', birthDate: '1942-06-25', deathDate: '2017-12-19', section: 'A', row: 3, plot: 1, coordinates: { x: 2, y: 0 } },
-  { id: '6', name: 'Patricia Brown', birthDate: '1955-09-08', deathDate: '2022-01-15', section: 'A', row: 3, plot: 3, coordinates: { x: 2, y: 2 } },
-  { id: '7', name: 'Michael Johnson', birthDate: '1948-04-17', deathDate: '2019-08-22', section: 'B', row: 1, plot: 2, coordinates: { x: 0, y: 1 } },
-  { id: '8', name: 'Linda Wilson', birthDate: '1963-12-30', deathDate: '2023-06-11', section: 'B', row: 1, plot: 4, coordinates: { x: 0, y: 3 } },
-  { id: '9', name: 'David Martinez', birthDate: '1940-02-14', deathDate: '2018-10-05', section: 'B', row: 2, plot: 1, coordinates: { x: 1, y: 0 } },
-  { id: '10', name: 'Barbara Garcia', birthDate: '1958-07-21', deathDate: '2021-09-28', section: 'B', row: 2, plot: 5, coordinates: { x: 1, y: 4 } },
-  { id: '11', name: 'Richard Rodriguez', birthDate: '1935-05-09', deathDate: '2016-04-13', section: 'B', row: 3, plot: 2, coordinates: { x: 2, y: 1 } },
-  { id: '12', name: 'Susan Lee', birthDate: '1961-10-28', deathDate: '2022-07-30', section: 'B', row: 3, plot: 4, coordinates: { x: 2, y: 3 } },
+  { id: '1', name: 'John Anderson', birthDate: '1945.03.12', deathDate: '2018.07.22', section: 'A', row: 1, plot: 3, coordinates: { x: 0, y: 2 } },
+  { id: '2', name: 'Mary Thompson', birthDate: '1952.08.15', deathDate: '2020.11.30', section: 'A', row: 1, plot: 5, coordinates: { x: 0, y: 4 } },
+  { id: '3', name: 'Robert Williams', birthDate: '1938.01.20', deathDate: '2019.05.14', section: 'A', row: 2, plot: 2, coordinates: { x: 1, y: 1 } },
+  { id: '4', name: 'Elizabeth Davis', birthDate: '1960.11.03', deathDate: '2021.03.08', section: 'A', row: 2, plot: 4, coordinates: { x: 1, y: 3 } },
+  { id: '5', name: 'James Miller', birthDate: '1942.06.25', deathDate: '2017.12.19', section: 'A', row: 3, plot: 1, coordinates: { x: 2, y: 0 } },
+  { id: '6', name: 'Patricia Brown', birthDate: '1955.09.08', deathDate: '2022.01.15', section: 'A', row: 3, plot: 3, coordinates: { x: 2, y: 2 } },
+  { id: '7', name: 'Michael Johnson', birthDate: '1948.04.17', deathDate: '2019.08.22', section: 'B', row: 1, plot: 2, coordinates: { x: 0, y: 1 } },
+  { id: '8', name: 'Linda Wilson', birthDate: '1963.12.30', deathDate: '2023.06.11', section: 'B', row: 1, plot: 4, coordinates: { x: 0, y: 3 } },
+  { id: '9', name: 'David Martinez', birthDate: '1940.02.14', deathDate: '2018.10.05', section: 'B', row: 2, plot: 1, coordinates: { x: 1, y: 0 } },
+  { id: '10', name: 'Barbara Garcia', birthDate: '1958.07.21', deathDate: '2021.09.28', section: 'B', row: 2, plot: 5, coordinates: { x: 1, y: 4 } },
+  { id: '11', name: 'Richard Rodriguez', birthDate: '1935.05.09', deathDate: '2016.04.13', section: 'B', row: 3, plot: 2, coordinates: { x: 2, y: 1 } },
+  { id: '12', name: 'Susan Lee', birthDate: '1961.10.28', deathDate: '2022.07.30', section: 'B', row: 3, plot: 4, coordinates: { x: 2, y: 3 } },
 ];
 
 // Services Data
 const servicesList = [
-  { id: 'cleaning', name: 'Tombstone Cleaning', price: '$150' },
-  { id: 'repair', name: 'Tombstone Repair', price: '$300+' },
-  { id: 'engraving', name: 'Additional Engraving', price: '$200+' },
-  { id: 'restoration', name: 'Full Restoration', price: '$500+' },
-  { id: 'landscaping', name: 'Plot Landscaping', price: '$100' },
+  { id: 'czyszczenie', name: 'Czyszczenie nagrobków', price: '150zł+' },
+  { id: 'naprawa', name: 'Naprawa nagrobków', price: '300zł+' },
+  { id: 'grawerunek', name: 'Dodatkowe grawerowanie', price: '200zł+' },
+  { id: 'renowacja', name: 'Pełna renowacja', price: '500zł+' },
+  { id: 'landscaping', name: 'Zagospodarowanie terenu', price: '100zł' },
 ];
 
 const additionalServicesList = [
-  { id: 'flowers', name: 'Fresh Flowers Placement', price: '$50' },
-  { id: 'photo', name: 'Before/After Photos', price: '$25' },
-  { id: 'sealant', name: 'Protective Sealant', price: '$75' },
+  { id: 'kwiaty', name: 'Umieszczanie świeżych kwiatów', price: '50zł' },
+  { id: 'zdjęcie', name: 'Zdjęcia przed/po', price: '25zł' },
+  { id: 'uszczelniacz', name: 'Uszczelniacz ochronny', price: '75zł' },
 ];
 
 // Articles Data
 const articlesList = [
   {
     id: 1,
-    title: 'Choosing the Right Tombstone Material: A Complete Guide',
-    excerpt: 'Understanding the differences between granite, marble, and bronze can help you make an informed decision that will last for generations.',
+    title: 'Wybór odpowiedniego materiału na nagrobek: kompletny przewodnik',
+    excerpt: 'Zrozumienie różnic pomiędzy granitem, marmurem i brązem może pomóc Ci podjąć świadomą decyzję, która będzie trwała przez pokolenia.',
     date: '2024-11-15',
-    category: 'Materials',
-    readTime: '5 min read',
+    category: 'Materiały',
+    readTime: '5 minut czytania',
   },
   {
     id: 2,
-    title: 'Tombstone Maintenance: Seasonal Care Tips',
-    excerpt: 'Learn how to properly care for and maintain tombstones through different seasons to preserve their beauty and integrity.',
+    title: 'Konserwacja nagrobków: porady dotyczące pielęgnacji sezonowej',
+    excerpt: 'Dowiedz się, jak prawidłowo pielęgnować i konserwować nagrobki w różnych porach roku, aby zachować ich piękno i integralność.',
     date: '2024-11-10',
-    category: 'Maintenance',
-    readTime: '4 min read',
+    category: 'Konserwacja',
+    readTime: '4 minuty czytania',
   },
   {
     id: 3,
-    title: 'The History of Cemetery Symbolism',
-    excerpt: 'Discover the meanings behind common symbols found on tombstones, from angels and doves to crosses and flowers.',
+    title: 'Historia symboliki cmentarnej',
+    excerpt: 'Odkryj znaczenie symboli powszechnie spotykanych na nagrobkach – od aniołów i gołębi po krzyże i kwiaty.',
     date: '2024-11-05',
-    category: 'History',
-    readTime: '7 min read',
+    category: 'Historia',
+    readTime: '7 minut czytania',
   },
   {
     id: 4,
-    title: 'Restoration vs. Replacement: Making the Right Choice',
-    excerpt: 'When a tombstone shows signs of wear, understanding when to restore versus replace can save money and preserve history.',
+    title: 'Renowacja czy wymiana: Dokonanie właściwego wyboru',
+    excerpt: 'Gdy nagrobek nosi ślady zużycia, należy zrozumieć, kiedy go odnowić, a kiedy wymienić, może zaoszczędzić pieniądze i zachować historię.',
     date: '2024-10-28',
-    category: 'Restoration',
-    readTime: '6 min read',
+    category: 'Renowacja',
+    readTime: '6 minut czytania',
   },
   {
     id: 5,
-    title: 'Modern Tombstone Design Trends',
-    excerpt: 'Explore contemporary approaches to memorial design, from laser etching to custom sculptures and personalized engravings.',
+    title: 'Nowoczesne trendy w projektowaniu nagrobków',
+    excerpt: 'Poznaj współczesne podejścia do projektowania obiektów upamiętniających, od grawerowania laserowego po niestandardowe rzeźby i spersonalizowane grawerunki.',
     date: '2024-10-20',
-    category: 'Design',
-    readTime: '5 min read',
+    category: 'Projekt',
+    readTime: '5 minut czytania',
   },
   {
     id: 6,
-    title: 'Environmental Considerations in Cemetery Planning',
-    excerpt: 'Learn about eco-friendly burial options and sustainable cemetery practices that are better for the environment.',
+    title: 'Zagadnienia środowiskowe w planowaniu cmentarzy',
+    excerpt: 'Dowiedz się więcej o przyjaznych dla środowiska możliwościach pochówku i zrównoważonych praktykach cmentarnych, które są korzystniejsze dla środowiska.',
     date: '2024-10-12',
-    category: 'Environment',
-    readTime: '6 min read',
+    category: 'Środowisko',
+    readTime: '6 minut czytania',
   },
 ];
 
@@ -169,7 +169,7 @@ function renderGraves(graves) {
   if (graves.length === 0) {
     searchResults.innerHTML = `
       <div class="p-8 text-center text-slate-500 bg-white rounded-lg border border-slate-200">
-        <p>No results found. Please try a different search term.</p>
+        <p>Nie znaleziono wyników. Spróbuj użyć innego terminu wyszukiwania.</p>
       </div>
     `;
     return;
@@ -189,18 +189,18 @@ function renderGraves(graves) {
           
           <div class="flex items-center gap-2 text-slate-700 text-sm">
             <i data-lucide="map-pin" class="w-4 h-4 text-slate-500"></i>
-            <span>Section ${grave.section} • Row ${grave.row} • Plot ${grave.plot}</span>
+            <span>Sekcja ${grave.section} • Rząd ${grave.row} • Miejsce ${grave.plot}</span>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
           <button onclick="selectGraveAndShowMap('${grave.id}')" class="flex items-center px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 text-sm transition-colors">
             <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
-            View Location
+            Zobacz na mapie
           </button>
           <button onclick="selectGraveAndShowServices('${grave.id}')" class="flex items-center px-4 py-2 border border-slate-200 text-slate-900 rounded-md hover:bg-slate-100 text-sm transition-colors">
             <i data-lucide="wrench" class="w-4 h-4 mr-2"></i>
-            Order Service
+            Wybierz usługę
           </button>
         </div>
       </div>
@@ -222,9 +222,9 @@ function renderMap() {
     let gridCellsHTML = '';
     
     // Column Headers
-    gridCellsHTML += `<div class="text-center text-slate-500 py-2 text-xs">Row</div>`;
+    gridCellsHTML += `<div class="text-center text-slate-500 py-2 text-xs">Rząd</div>`;
     for(let i=0; i < gridSize.cols; i++) {
-      gridCellsHTML += `<div class="text-center text-slate-500 py-2 text-xs">Plot ${i+1}</div>`;
+      gridCellsHTML += `<div class="text-center text-slate-500 py-2 text-xs">Miejsce ${i+1}</div>`;
     }
 
     // Rows
@@ -252,7 +252,7 @@ function renderMap() {
         }
 
         gridCellsHTML += `
-          <button ${onClick} class="h-16 rounded border-2 transition-all w-full ${cellClass}" ${!grave ? 'disabled' : ''} title="${grave ? grave.name : 'Available'}">
+          <button ${onClick} class="h-16 rounded border-2 transition-all w-full ${cellClass}" ${!grave ? 'Niedostępne' : ''} title="${grave ? grave.name : 'Dostępne'}">
             ${content}
           </button>
         `;
@@ -263,8 +263,8 @@ function renderMap() {
       <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
         <div class="space-y-4">
           <div class="flex items-center gap-3">
-            <span class="px-3 py-1 bg-slate-100 text-slate-900 rounded-full text-sm font-medium">Section ${section}</span>
-            <span class="text-slate-600 text-sm">${sectionGraves.length} plots occupied</span>
+            <span class="px-3 py-1 bg-slate-100 text-slate-900 rounded-full text-sm font-medium">Sekcja ${section}</span>
+            <span class="text-slate-600 text-sm">${sectionGraves.length} miejsc zajętych</span>
           </div>
           <hr class="border-slate-100">
           <div class="overflow-x-auto">
@@ -285,13 +285,13 @@ function renderMap() {
     clearSelectionBtn.classList.remove('hidden');
     mapSelectedDetails.innerHTML = `
       <div class="space-y-3">
-        <h3 class="text-blue-900 font-semibold">Selected Location</h3>
+        <h3 class="text-blue-900 font-semibold">Wybrane miejsce</h3>
         <div class="grid md:grid-cols-2 gap-4 text-slate-700 text-sm">
-          <div><span class="text-slate-600">Name:</span> ${selectedGrave.name}</div>
-          <div><span class="text-slate-600">Section:</span> ${selectedGrave.section}</div>
-          <div><span class="text-slate-600">Row:</span> ${selectedGrave.row}</div>
-          <div><span class="text-slate-600">Plot:</span> ${selectedGrave.plot}</div>
-          <div class="md:col-span-2"><span class="text-slate-600">Dates:</span> ${selectedGrave.birthDate} - ${selectedGrave.deathDate}</div>
+          <div><span class="text-slate-600">Imię:</span> ${selectedGrave.name}</div>
+          <div><span class="text-slate-600">Sekcja:</span> ${selectedGrave.section}</div>
+          <div><span class="text-slate-600">Rząd:</span> ${selectedGrave.row}</div>
+          <div><span class="text-slate-600">Miejsce:</span> ${selectedGrave.plot}</div>
+          <div class="md:col-span-2"><span class="text-slate-600">Data:</span> ${selectedGrave.birthDate} - ${selectedGrave.deathDate}</div>
         </div>
       </div>
     `;
@@ -324,7 +324,7 @@ function selectGraveAndShowMap(id) {
 // --- Services Logic ---
 function renderServicesForm() {
   // Populate Select
-  serviceSelect.innerHTML = '<option value="">Select a service</option>' + 
+  serviceSelect.innerHTML = '<option value="">Wybierz usługę</option>' + 
     servicesList.map(s => `<option value="${s.id}">${s.name} - ${s.price}</option>`).join('');
 
   // Populate Checkboxes
@@ -338,17 +338,17 @@ function renderServicesForm() {
   `).join('');
 
   // Handle Submit
-  serviceForm.addEventListener('submit', (e) => {
+  serviceForm.addEventListener('Zgłoś', (e) => {
     e.preventDefault();
     if (!selectedGrave) return;
 
     // Simulate submission
     const originalBtnText = serviceSubmitBtn.innerText;
-    serviceSubmitBtn.innerText = 'Submitting...';
+    serviceSubmitBtn.innerText = 'Zgłaszanie...';
     serviceSubmitBtn.disabled = true;
 
     setTimeout(() => {
-      alert(`Service request for ${selectedGrave.name} submitted successfully! We will contact you shortly.`);
+      alert(`Zgłoszenie serwisowe dla ${selectedGrave.name} zostało pomyślnie wysłane! Wkrótce się z Tobą skontaktujemy.`);
       serviceForm.reset();
       selectedGrave = null;
       renderMap();
