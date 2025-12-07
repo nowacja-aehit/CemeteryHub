@@ -51,6 +51,16 @@ export class RequestsView extends Component {
             this.renderTableRows().forEach(row => tableBody.appendChild(row));
             if (window.lucide) window.lucide.createIcons();
         }
+
+        // Update filter buttons state
+        if (this.element) {
+            const buttons = this.element.querySelectorAll('button[data-filter]');
+            buttons.forEach(btn => {
+                const filter = btn.dataset.filter;
+                const isActive = this.state.filter === filter;
+                btn.className = `px-3 py-1 rounded text-sm ${isActive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+            });
+        }
     }
 
     getFilteredRequests() {
@@ -166,10 +176,10 @@ export class RequestsView extends Component {
         const isActive = this.state.filter === filter;
         return this.createElement('button', {
             className: `px-3 py-1 rounded text-sm ${isActive ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`,
+            'data-filter': filter,
             onclick: () => {
                 this.state.filter = filter;
                 this.refresh();
-                this.mount(this.element.parentNode); 
             }
         }, [label]);
     }

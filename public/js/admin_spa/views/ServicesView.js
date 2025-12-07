@@ -8,21 +8,30 @@ export class ServicesView extends Component {
         super();
         this.state = {
             services: [],
+            categories: [],
             loading: true
         };
-        this.loadServices();
+        this.loadData();
     }
 
-    async loadServices() {
+    async loadData() {
         try {
-            const data = await API.get('/api/services');
-            this.state.services = data;
+            const [services, categories] = await Promise.all([
+                API.get('/api/services'),
+                API.get('/api/categories')
+            ]);
+            this.state.services = services;
+            this.state.categories = categories;
             this.state.loading = false;
             this.refresh();
         } catch (error) {
-            console.error('Failed to load services', error);
+            console.error('Failed to load data', error);
             this.state.loading = false;
         }
+    }
+
+    loadServices() {
+        this.loadData();
     }
 
     refresh() {
@@ -65,12 +74,21 @@ export class ServicesView extends Component {
             // Toolbar
             this.createElement('div', { className: 'p-4 border-b border-slate-200 flex justify-between items-center' }, [
                 this.createElement('h3', { className: 'font-semibold text-lg' }, ['Cennik Usług']),
-                this.createElement('button', { 
-                    className: 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2',
-                    onclick: () => this.openAddModal()
-                }, [
-                    this.createElement('i', { 'data-lucide': 'plus', className: 'w-4 h-4' }),
-                    'Dodaj Usługę'
+                this.createElement('div', { className: 'flex gap-2' }, [
+                    this.createElement('button', { 
+                        className: 'bg-slate-100 text-slate-700 px-4 py-2 rounded hover:bg-slate-200 flex items-center gap-2',
+                        onclick: () => this.openCategoriesModal()
+                    }, [
+                        this.createElement('i', { 'data-lucide': 'list', className: 'w-4 h-4' }),
+                        'Kategorie'
+                    ]),
+                    this.createElement('button', { 
+                        className: 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2',
+                        onclick: () => this.openAddModal()
+                    }, [
+                        this.createElement('i', { 'data-lucide': 'plus', className: 'w-4 h-4' }),
+                        'Dodaj Usługę'
+                    ])
                 ])
             ]),
             // Table
@@ -115,8 +133,13 @@ export class ServicesView extends Component {
     }
 
     openAddModal() {
-        const newService = { name: '', category: 'primary', price: '', slug: '' };
+        const newService = { name: '', category: this.state.categories[0]?.name || '', price: '', slug: '' };
         
+        const categoryOptions = this.state.categories.map(c => ({ value: c.name, label: c.name }));
+        if (categoryOptions.length === 0) {
+            categoryOptions.push({ value: '', label: 'Brak kategorii - dodaj najpierw kategorię' });
+        }
+
         const modal = new Modal({
             title: 'Dodaj Nową Usługę',
             content: [
@@ -125,10 +148,7 @@ export class ServicesView extends Component {
                     // Auto-generate slug
                     newService.slug = v.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
                 }),
-                this.createSelect('Kategoria', [
-                    { value: 'primary', label: 'Usługi Główne' },
-                    { value: 'additional', label: 'Usługi Dodatkowe' }
-                ], 'primary', v => newService.category = v),
+                this.createSelect('Kategoria', categoryOptions, newService.category, v => newService.category = v),
                 this.createInput('Cena (PLN)', 'number', '', v => newService.price = parseFloat(v))
             ],
             onConfirm: async () => {
@@ -147,14 +167,17 @@ export class ServicesView extends Component {
     openEditModal(service) {
         const editedService = { ...service };
         
+        const categoryOptions = this.state.categories.map(c => ({ value: c.name, label: c.name }));
+        // Ensure current category is in options even if deleted (optional, but good for UX)
+        if (editedService.category && !categoryOptions.find(c => c.value === editedService.category)) {
+            categoryOptions.push({ value: editedService.category, label: editedService.category });
+        }
+
         const modal = new Modal({
             title: 'Edytuj Usługę',
             content: [
                 this.createInput('Nazwa Usługi', 'text', editedService.name, v => editedService.name = v),
-                this.createSelect('Kategoria', [
-                    { value: 'primary', label: 'Usługi Główne' },
-                    { value: 'additional', label: 'Usługi Dodatkowe' }
-                ], editedService.category, v => editedService.category = v),
+                this.createSelect('Kategoria', categoryOptions, editedService.category, v => editedService.category = v),
                 this.createInput('Cena (PLN)', 'number', editedService.price, v => editedService.price = parseFloat(v))
             ],
             onConfirm: async () => {
@@ -168,6 +191,96 @@ export class ServicesView extends Component {
             }
         });
         modal.mount();
+    }
+
+    openCategoriesModal() {
+        const renderCategoriesList = () => {
+            const list = document.createElement('div');
+            list.className = 'space-y-2 mt-4 max-h-60 overflow-y-auto';
+            
+            if (this.state.categories.length === 0) {
+                list.innerHTML = '<div class="text-sm text-slate-500 italic">Brak kategorii</div>';
+            } else {
+                this.state.categories.forEach(cat => {
+                    const item = document.createElement('div');
+                    item.className = 'flex justify-between items-center bg-slate-50 p-2 rounded border border-slate-200';
+                    item.innerHTML = `
+                        <span class="text-sm font-medium">${cat.name}</span>
+                        <button class="text-red-500 hover:text-red-700 p-1" data-id="${cat.id}">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    `;
+                    item.querySelector('button').onclick = () => this.deleteCategory(cat.id, modal);
+                    list.appendChild(item);
+                });
+            }
+            return list;
+        };
+
+        let newCategoryName = '';
+        const inputContainer = this.createElement('div', { className: 'flex gap-2' }, [
+            this.createElement('input', {
+                type: 'text',
+                placeholder: 'Nowa kategoria...',
+                className: 'flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm',
+                oninput: (e) => newCategoryName = e.target.value
+            }),
+            this.createElement('button', {
+                className: 'bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm',
+                onclick: async () => {
+                    if (!newCategoryName.trim()) return;
+                    try {
+                        await API.post('/api/admin/categories', { name: newCategoryName });
+                        await this.loadData(); // Reload to get new list
+                        // Refresh modal content
+                        const newList = renderCategoriesList();
+                        const oldList = modal.element.querySelector('.space-y-2.mt-4');
+                        if (oldList) oldList.replaceWith(newList);
+                        if (window.lucide) window.lucide.createIcons();
+                        // Clear input
+                        inputContainer.querySelector('input').value = '';
+                        newCategoryName = '';
+                    } catch (err) {
+                        alert('Błąd dodawania kategorii: ' + err.message);
+                    }
+                }
+            }, ['Dodaj'])
+        ]);
+
+        const modal = new Modal({
+            title: 'Zarządzanie Kategoriami',
+            content: [
+                inputContainer,
+                renderCategoriesList()
+            ],
+            confirmText: 'Zamknij',
+            onConfirm: () => modal.close()
+        });
+        modal.mount();
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    async deleteCategory(id, modal) {
+        if (!confirm('Czy na pewno chcesz usunąć tę kategorię?')) return;
+        try {
+            await API.delete(`/api/admin/categories/${id}`);
+            await this.loadData();
+            // Refresh modal content
+            // We need to re-open or refresh the list. 
+            // Since renderCategoriesList is inside openCategoriesModal scope, we can't easily call it.
+            // But we can close and reopen or manipulate DOM.
+            // Simpler: close and reopen for now or just refresh the view behind.
+            // Better: The delete button click handler is inside the modal scope, so we can refresh the list there.
+            // I'll implement a simple refresh logic in the onclick handler above.
+            
+            // Actually, I implemented the refresh logic inside the onclick above for adding.
+            // For deleting, I need to do similar.
+            // Let's rewrite openCategoriesModal to be more robust or just close/reopen.
+            modal.close();
+            this.openCategoriesModal();
+        } catch (err) {
+            alert('Błąd usuwania kategorii: ' + err.message);
+        }
     }
 
     async deleteService(id) {

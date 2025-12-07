@@ -1,6 +1,11 @@
 {
-  "files.exclude": {
-    "**/.git": true,
-    "**/vendor": true
-  }
+    "files.exclude": {
+        "**/.git": true,
+        "**/vendor": true
+    },
+    "liveServer.settings.ignoreFiles": [
+        "**/*.db",
+        "**/*.sqlite",
+        "**/__pycache__/**"
+    ]
 }

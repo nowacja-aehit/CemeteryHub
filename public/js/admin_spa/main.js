@@ -1,4 +1,5 @@
 import { Router } from './core/Router.js';
+import { API } from './core/API.js';
 import { LoginView } from './views/LoginView.js';
 import { DashboardView } from './views/DashboardView.js';
 import { GravesView } from './views/GravesView.js';
@@ -26,7 +27,31 @@ const routes = {
     '/': { view: DashboardView, requiresAuth: true } // Default to dashboard
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('Initializing Admin SPA...');
+
+    // Security Fix: Check for credentials in URL and clean them up
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('username') || urlParams.has('password')) {
+        const username = urlParams.get('username');
+        const password = urlParams.get('password');
+
+        if (username && password) {
+            try {
+                // Attempt auto-login
+                const response = await API.post('/api/login', { username, password });
+                if (response.success) {
+                    localStorage.setItem('adminUser', JSON.stringify(response.user || { username }));
+                }
+            } catch (e) {
+                console.error('Auto-login failed', e);
+            }
+        }
+        
+        // Remove sensitive data from URL
+        const newUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+
     new Router(routes);
 });

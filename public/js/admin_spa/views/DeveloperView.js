@@ -30,6 +30,8 @@ export class DeveloperView extends Component {
     }
 
     async runTests() {
+        if (this.state.testRunning) return;
+        
         this.state.testRunning = true;
         this.state.testOutput = null;
         this.state.testResults = [];
@@ -41,7 +43,8 @@ export class DeveloperView extends Component {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
-                }
+                },
+                cache: 'no-store' // Ensure no caching
             });
 
             if (!response.ok) {
@@ -60,6 +63,7 @@ export class DeveloperView extends Component {
                 buffer += chunk;
                 
                 const lines = buffer.split('\n\n');
+                // Keep the last part in buffer if it's incomplete
                 buffer = lines.pop();
 
                 for (const line of lines) {
@@ -75,7 +79,8 @@ export class DeveloperView extends Component {
                                     this.state.testResults.push(result);
                                 }
                             }
-                            this.refresh();
+                            // Use requestAnimationFrame to avoid blocking UI and excessive re-renders
+                            requestAnimationFrame(() => this.refresh());
                         } catch (e) {
                             console.error('Error parsing JSON from stream', e);
                         }
@@ -180,20 +185,32 @@ export class DeveloperView extends Component {
                 this.createElement('h3', { className: 'text-lg font-semibold mb-4' }, ['Akcje developerskie']),
                 this.createElement('div', { className: 'flex gap-4 flex-wrap' }, [
                     this.createElement('button', {
+                        type: 'button',
                         className: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50',
-                        onclick: () => this.runTests(),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            this.runTests();
+                        },
                         disabled: this.state.testRunning || this.state.actionLoading
                     }, [this.state.testRunning ? 'Uruchamianie...' : 'Uruchom testy']),
                     
                     this.createElement('button', {
+                        type: 'button',
                         className: 'px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50',
-                        onclick: () => this.seedData(),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            this.seedData();
+                        },
                         disabled: this.state.testRunning || this.state.actionLoading
                     }, ['Załaduj przykładowe dane']),
 
                     this.createElement('button', {
+                        type: 'button',
                         className: 'px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50',
-                        onclick: () => this.clearData(),
+                        onclick: (e) => {
+                            e.preventDefault();
+                            this.clearData();
+                        },
                         disabled: this.state.testRunning || this.state.actionLoading
                     }, ['Wyczyść bazę danych'])
                 ])

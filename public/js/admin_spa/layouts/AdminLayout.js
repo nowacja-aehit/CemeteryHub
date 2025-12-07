@@ -13,10 +13,16 @@ export class AdminLayout extends Component {
     }
 
     render() {
+        const isFlask = window.location.port === '5000';
+        const iconPath = isFlask ? '/assets/images/icon_white.png' : '/public/assets/images/icon_white.png';
+
         return this.createElement('div', { className: 'flex h-screen bg-slate-100' }, [
             // Sidebar
             this.createElement('aside', { className: 'w-64 bg-slate-900 text-white flex flex-col flex-shrink-0' }, [
-                this.createElement('div', { className: 'p-6 font-bold text-xl border-b border-slate-800' }, ['CemeteryHub']),
+                this.createElement('div', { className: 'p-6 font-bold text-xl border-b border-slate-800 flex items-center gap-2' }, [
+                    this.createElement('img', { src: iconPath, className: 'w-12 h-auto' }),
+                    'CemeteryHub'
+                ]),
                 this.createElement('nav', { className: 'flex-1 p-4 space-y-2 overflow-y-auto' }, [
                     this.createNavItem('Dashboard', '/dashboard', 'layout-dashboard'),
                     this.createNavItem('Groby', '/graves', 'layers'),
@@ -27,7 +33,7 @@ export class AdminLayout extends Component {
                     this.createNavItem('Rezerwacje', '/reservations', 'calendar'),
                     this.createNavItem('FAQ', '/faq', 'help-circle'),
                     this.createNavItem('Użytkownicy', '/users', 'users'),
-                    this.createNavItem('Developer', '/developer', 'code'),
+                    ...(window.location.port === '5000' ? [this.createNavItem('Developer', '/developer', 'code')] : []),
                 ]),
                 this.createElement('div', { className: 'p-4 border-t border-slate-800' }, [
                     this.createElement('button', { 

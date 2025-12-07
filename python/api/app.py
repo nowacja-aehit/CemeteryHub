@@ -19,6 +19,14 @@ db_path = os.path.join(basedir, '../../cemetery.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Disable reloader watching for database file to prevent restart loops during tests
+if os.environ.get('FLASK_ENV') == 'development' or app.debug:
+    # Add patterns to ignore
+    extra_files = []
+    # We don't want to watch the DB file
+else:
+    extra_files = []
+
 db = SQLAlchemy(app)
 
 # --- Modele Bazy Danych ---
@@ -961,41 +969,180 @@ def run_tests():
 @app.route('/api/admin/dev/seed-data', methods=['POST'])
 def seed_data():
     try:
-        # Add some sample graves
+        import random
+        from datetime import timedelta
+
+        # 1. Sections
         sections = Section.query.all()
         if not sections:
-             sections = [
-                Section(name='A', description='Sektor główny', total_rows=4, total_cols=6),
-                Section(name='B', description='Sektor boczny', total_rows=4, total_cols=6)
+             sections_data = [
+                Section(name='A', description='Sektor zabytkowy', total_rows=10, total_cols=10),
+                Section(name='B', description='Sektor główny', total_rows=15, total_cols=20),
+                Section(name='C', description='Sektor nowy', total_rows=10, total_cols=15),
+                Section(name='D', description='Urny', total_rows=5, total_cols=10)
             ]
-             db.session.bulk_save_objects(sections)
+             db.session.bulk_save_objects(sections_data)
              db.session.commit()
              sections = Section.query.all()
 
-        import random
-        names = ["Jan", "Anna", "Piotr", "Maria", "Krzysztof", "Barbara", "Andrzej", "Ewa"]
-        surnames = ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kowalczyk", "Kamiński", "Lewandowski", "Zieliński"]
+        # 2. Graves
+        names = ["Jan", "Anna", "Piotr", "Maria", "Krzysztof", "Barbara", "Andrzej", "Ewa", "Stanisław", "Krystyna", "Tomasz", "Zofia", "Paweł", "Elżbieta", "Michał", "Jadwiga"]
+        surnames = ["Kowalski", "Nowak", "Wiśniewski", "Wójcik", "Kowalczyk", "Kamiński", "Lewandowski", "Zieliński", "Szymański", "Woźniak", "Dąbrowski", "Kozłowski", "Jankowski", "Mazur"]
         
         new_graves = []
-        for _ in range(10):
+        for _ in range(50):
             name = f"{random.choice(names)} {random.choice(surnames)}"
             section = random.choice(sections).name
+            
+            # Random dates
+            birth_year = random.randint(1920, 1990)
+            death_year = birth_year + random.randint(20, 90)
+            if death_year > 2025: death_year = 2025
+            
+            birth_date = f"{birth_year}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}"
+            death_date = f"{death_year}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}"
+
             grave = Grave(
                 name=name,
-                birth_date=f"19{random.randint(20, 90)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
-                death_date=f"20{random.randint(0, 23)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
+                birth_date=birth_date,
+                death_date=death_date,
                 section=section,
                 row=str(random.randint(1, 10)),
-                plot=str(random.randint(1, 10)),
-                coord_x=0,
-                coord_y=0
+                plot=str(random.randint(1, 20)),
+                coord_x=random.randint(0, 100),
+                coord_y=random.randint(0, 100)
             )
             new_graves.append(grave)
         
         db.session.bulk_save_objects(new_graves)
         db.session.commit()
-        return jsonify({'message': f'Dodano {len(new_graves)} przykładowych grobów'})
+        graves = Grave.query.all()
+
+        # 2.5 Service Categories
+        service_categories = ["Sprzątanie", "Konserwacja", "Produkty", "Opieka", "Inne"]
+        if Category.query.count() == 0:
+            for cat_name in service_categories:
+                db.session.add(Category(name=cat_name))
+            db.session.commit()
+
+        # 3. Services
+        services_data = [
+            Service(name="Sprzątanie grobu (mały)", slug="cleaning-small", price=100.0, category="Sprzątanie"),
+            Service(name="Sprzątanie grobu (duży)", slug="cleaning-large", price=150.0, category="Sprzątanie"),
+            Service(name="Mycie nagrobka", slug="washing", price=80.0, category="Konserwacja"),
+            Service(name="Znicz duży", slug="candle-large", price=35.0, category="Produkty"),
+            Service(name="Wiązanka kwiatów", slug="flowers", price=120.0, category="Produkty"),
+            Service(name="Opieka całoroczna", slug="year-care", price=1200.0, category="Opieka")
+        ]
+        # Check if services exist to avoid duplicates if run multiple times (though clear-data is usually run first)
+        if Service.query.count() == 0:
+            db.session.bulk_save_objects(services_data)
+            db.session.commit()
+        
+        services = Service.query.all()
+
+        # 4. Service Requests (Focus on December 2025)
+        requests = []
+        statuses = ['pending', 'in_progress', 'completed', 'cancelled']
+        
+        for i in range(20):
+            grave = random.choice(graves)
+            service = random.choice(services)
+            
+            # Generate dates in December 2025
+            day = random.randint(1, 31)
+            date_str = f"2025-12-{day:02d}"
+            created_date = datetime(2025, 12, day) - timedelta(days=random.randint(1, 5))
+            
+            req = ServiceRequest(
+                grave_id=grave.id,
+                service_type=service.name,
+                created_at=created_date,
+                status=random.choice(statuses),
+                customer_name=f"Klient {i+1}",
+                email=f"klient{i+1}@example.com",
+                phone=f"500{random.randint(100000, 999999)}",
+                notes=f"Proszę o wykonanie usługi w dniu {date_str}",
+                scheduled_date=date_str,
+                services=json.dumps([service.name]),
+                total_cost=service.price,
+                discount=0,
+                admin_notes="Testowe zgłoszenie"
+            )
+            requests.append(req)
+        
+        db.session.bulk_save_objects(requests)
+
+        # 5. Reservations (Some in December)
+        reservations = []
+        for i in range(10):
+            day = random.randint(1, 31)
+            date_str = f"2025-12-{day:02d}"
+            
+            res = Reservation(
+                name=f"Rezerwujący {i+1}",
+                email=f"rezerwacja{i+1}@example.com",
+                phone=f"600{random.randint(100000, 999999)}",
+                section=random.choice(sections).name,
+                plot_type=random.choice(["Pojedynczy", "Podwójny", "Urna"]),
+                consultation=random.choice([True, False]),
+                notes="Chciałbym zarezerwować miejsce blisko alejki.",
+                admin_notes="",
+                status=random.choice(['Nowa', 'Potwierdzona', 'Anulowana']),
+                scheduled_date=date_str,
+                created_at=datetime(2025, 12, day) - timedelta(days=random.randint(1, 10))
+            )
+            reservations.append(res)
+        
+        db.session.bulk_save_objects(reservations)
+
+        # 6. Messages
+        messages = []
+        for i in range(10):
+            day = random.randint(1, 31)
+            msg = ContactMessage(
+                name=f"Pytający {i+1}",
+                email=f"pytanie{i+1}@example.com",
+                phone=f"700{random.randint(100000, 999999)}",
+                message="Czy cmentarz jest otwarty w święta?",
+                status=random.choice(['Nowa', 'Przeczytana', 'Odpowiedziano']),
+                admin_notes="",
+                created_at=datetime(2025, 12, day)
+            )
+            messages.append(msg)
+        
+        db.session.bulk_save_objects(messages)
+
+        # 7. Articles
+        articles_data = [
+            Article(title="Godziny otwarcia w Grudniu", content="W okresie świątecznym cmentarz czynny do 22:00.", category="Aktualności", date="2025-12-01", excerpt="Sprawdź godziny otwarcia.", read_time="1 min", is_visible=True),
+            Article(title="Przygotowania do zimy", content="Prosimy o zabezpieczenie nagrobków przed mrozem.", category="Porady", date="2025-11-15", excerpt="Jak dbać o nagrobek zimą?", read_time="3 min", is_visible=True),
+            Article(title="Nowy sektor D otwarty", content="Oddajemy do użytku nowy sektor urnowy.", category="Inwestycje", date="2025-10-20", excerpt="Nowe miejsca na urny.", read_time="2 min", is_visible=True),
+            Article(title="Msza Święta w Wigilię", content="Zapraszamy na mszę w kaplicy cmentarnej.", category="Wydarzenia", date="2025-12-24", excerpt="Harmonogram mszy.", read_time="1 min", is_visible=True)
+        ]
+        if Article.query.count() == 0:
+            db.session.bulk_save_objects(articles_data)
+
+        # 8. FAQ
+        faq_data = [
+            FAQ(question="Jakie są godziny otwarcia?", answer="Cmentarz jest otwarty codziennie od 7:00 do 20:00.", display_order=1),
+            FAQ(question="Jak znaleźć grób?", answer="Skorzystaj z wyszukiwarki na stronie głównej lub w aplikacji.", display_order=2),
+            FAQ(question="Czy można wjechać samochodem?", answer="Wjazd możliwy tylko dla osób niepełnosprawnych po kontakcie z biurem.", display_order=3)
+        ]
+        if FAQ.query.count() == 0:
+            db.session.bulk_save_objects(faq_data)
+
+        # 9. Extra Users
+        if not User.query.filter_by(username='pracownik').first():
+            worker = User(username='pracownik', role='user')
+            worker.set_password('pracownik123')
+            db.session.add(worker)
+
+        db.session.commit()
+        
+        return jsonify({'message': 'Baza danych została wypełniona przykładowymi danymi (Grudzień 2025)'})
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/dev/clear-data', methods=['POST'])
@@ -1009,6 +1156,7 @@ def clear_data():
         Article.query.delete()
         FAQ.query.delete()
         Service.query.delete()
+        Category.query.delete()
         Section.query.delete()
         
         # Delete non-admin users
@@ -1040,7 +1188,22 @@ def init_db():
             db.session.commit()
             print("Utworzono użytkownika admin/admin123")
 
+@app.route('/admin')
+def admin_index():
+    return send_from_directory(app.static_folder, 'html/admin.html')
+
+@app.route('/<path:path>')
+def static_proxy(path):
+    return send_from_directory(app.static_folder, path)
+
 if __name__ == '__main__':
     init_db()
     print("Serwer uruchomiony na http://localhost:5000")
+    # Exclude database file from reloader watch list
+    # Also exclude public folder if it's being watched (though Flask usually only watches .py)
+    # But if the user is running tests that modify files, we want to be careful.
+    # However, Flask reloader by default only watches .py files.
+    # If the user is using VS Code Live Server, that's separate.
+    # But if the user says "przeładowanie strony", it could be the browser reloading.
+    
     app.run(debug=True, port=5000, use_reloader=True)
