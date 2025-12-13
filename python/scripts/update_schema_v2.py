@@ -3,8 +3,8 @@ import os
 
 # Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, '..', '..'))
-DB_PATH = os.path.join(PROJECT_ROOT, 'python', 'api', 'cemetery.db')
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+DB_PATH = os.path.join(PROJECT_ROOT, "python", "api", "cemetery.db")
 
 def migrate():
     print(f"Connecting to database at {DB_PATH}...")
@@ -16,14 +16,14 @@ def migrate():
     columns = [info[1] for info in cursor.fetchall()]
 
     # Add admin_notes if not exists
-    if 'admin_notes' not in columns:
+    if "admin_notes" not in columns:
         print("Adding 'admin_notes' column...")
         cursor.execute("ALTER TABLE service_request ADD COLUMN admin_notes TEXT")
     else:
         print("'admin_notes' column already exists.")
 
     # Add services column (for JSON list of services) if not exists
-    if 'services' not in columns:
+    if "services" not in columns:
         print("Adding 'services' column...")
         cursor.execute("ALTER TABLE service_request ADD COLUMN services TEXT")
     else:
@@ -33,5 +33,5 @@ def migrate():
     conn.close()
     print("Migration complete.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     migrate()

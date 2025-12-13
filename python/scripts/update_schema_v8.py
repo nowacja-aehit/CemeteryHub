@@ -3,7 +3,7 @@ import os
 
 # Path to database
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, '../cemetery.db')
+DB_PATH = os.path.join(BASE_DIR, "../cemetery.db")
 
 def update_schema():
     print(f"Updating database at {DB_PATH}")
@@ -27,5 +27,5 @@ def update_schema():
     conn.commit()
     conn.close()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     update_schema()

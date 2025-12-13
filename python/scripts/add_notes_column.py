@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'api', 'cemetery.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "api", "cemetery.db")
 
 def add_notes_column():
     conn = sqlite3.connect(DB_PATH)
@@ -19,5 +19,5 @@ def add_notes_column():
     conn.commit()
     conn.close()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     add_notes_column()

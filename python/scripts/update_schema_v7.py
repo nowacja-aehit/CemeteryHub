@@ -3,7 +3,7 @@ import os
 
 # Adjust path to point to the correct location of cemetery.db
 # Assuming this script is in python/scripts/ and db is in python/api/
-DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'api', 'cemetery.db'))
+DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "api", "cemetery.db"))
 
 def update_schema():
     print(f"Łączenie z bazą danych w: {DB_PATH}")
@@ -25,5 +25,5 @@ def update_schema():
     conn.commit()
     conn.close()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     update_schema()

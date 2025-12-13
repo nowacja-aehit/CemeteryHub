@@ -3,8 +3,8 @@ import os
 
 # Configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, '..', '..'))
-DB_PATH = os.path.join(PROJECT_ROOT, 'python', 'api', 'cemetery.db')
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+DB_PATH = os.path.join(PROJECT_ROOT, "python", "api", "cemetery.db")
 
 def migrate():
     print(f"Connecting to database at {DB_PATH}...")
@@ -16,7 +16,7 @@ def migrate():
     columns = [info[1] for info in cursor.fetchall()]
 
     # Add discount if not exists
-    if 'discount' not in columns:
+    if "discount" not in columns:
         print("Adding 'discount' column...")
         cursor.execute("ALTER TABLE service_request ADD COLUMN discount REAL DEFAULT 0.0")
     else:
@@ -26,5 +26,5 @@ def migrate():
     conn.close()
     print("Migration complete.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     migrate()
