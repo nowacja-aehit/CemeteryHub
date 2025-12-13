@@ -1,5 +1,5 @@
 export class API {
-    static BASE_URL = 'http://localhost:5000'; // Adjust if needed
+    static BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 
     static async request(endpoint, method = 'GET', body = null) {
         const headers = {
