@@ -3,7 +3,7 @@ import os
 
 # Ścieżka do bazy danych
 basedir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(basedir, '../../cemetery.db')
+db_path = os.path.join(basedir, "../../cemetery.db")
 
 def fix_data():
     conn = sqlite3.connect(db_path)
@@ -32,5 +32,5 @@ def fix_data():
     conn.close()
     print("Zakończono.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     fix_data()

@@ -2,8 +2,8 @@ import sqlite3
 import os
 
 # Configuration
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'api'))
-DB_PATH = os.path.join(BASE_DIR, 'cemetery.db')
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "api"))
+DB_PATH = os.path.join(BASE_DIR, "cemetery.db")
 
 def update_schema():
     print(f"Connecting to database at {DB_PATH}...")
@@ -25,5 +25,5 @@ def update_schema():
     conn.close()
     print("Schema update completed.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     update_schema()

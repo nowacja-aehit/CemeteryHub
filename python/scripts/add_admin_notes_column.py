@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_PATH = 'cemetery.db'
+DB_PATH = "cemetery.db"
 
 def add_column():
     if not os.path.exists(DB_PATH):
