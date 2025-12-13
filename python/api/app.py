@@ -4,6 +4,7 @@ import subprocess
 import sys
 import platform
 from datetime import datetime
+from urllib.parse import quote_plus
 from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -16,7 +17,60 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # Konfiguracja bazy danych
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, '../../cemetery.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
+
+def parse_mysql_connection_string(raw_connection: str):
+    """Parse key-value Azure MySQL connection string into SQLAlchemy URI."""
+    if not raw_connection:
+        return None
+
+    entries = [chunk for chunk in raw_connection.split(';') if chunk.strip()]
+    kv = {}
+    for entry in entries:
+        if '=' not in entry:
+            continue
+        key, value = entry.split('=', 1)
+        kv[key.strip().lower()] = value.strip()
+
+    db_name = kv.get('database') or kv.get('db')
+    server = kv.get('server') or kv.get('host')
+    user = kv.get('user id') or kv.get('user') or kv.get('uid')
+    password = kv.get('password')
+    port = kv.get('port', '3306')
+
+    if not all([db_name, server, user, password]):
+        return None
+
+    ssl_params = []
+    ssl_ca_env = os.getenv('AZURE_MYSQL_SSL_CA') or os.getenv('MYSQL_SSL_CA_PATH')
+    default_ssl_ca = os.path.join(basedir, 'certs', 'DigiCertGlobalRootG2.crt.pem')
+    if ssl_ca_env:
+        ssl_params.append(f"ssl_ca={quote_plus(ssl_ca_env)}")
+    elif os.path.exists(default_ssl_ca):
+        ssl_params.append(f"ssl_ca={quote_plus(default_ssl_ca)}")
+
+    ssl_disabled_flag = os.getenv('AZURE_MYSQL_SSL_DISABLED')
+    if ssl_disabled_flag:
+        ssl_params.append(f"ssl_disabled={ssl_disabled_flag}")
+
+    query = f"?{'&'.join(ssl_params)}" if ssl_params else ''
+
+    return (
+        f"mysql+mysqlconnector://{quote_plus(user)}:{quote_plus(password)}@"
+        f"{server}:{port}/{db_name}{query}"
+    )
+
+
+def resolve_database_uri():
+    """Detect Azure MySQL settings or fall back to local SQLite for dev/tests."""
+    azure_conn = os.getenv('AZURE_MYSQL_CONNECTIONSTRING')
+    mysql_uri = parse_mysql_connection_string(azure_conn)
+    if mysql_uri:
+        return mysql_uri
+    return f'sqlite:///{db_path}'
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = resolve_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Disable reloader watching for database file to prevent restart loops during tests
