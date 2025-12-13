@@ -236,7 +236,11 @@ export class DeveloperView extends Component {
                 className: `px-4 py-3 flex items-center justify-between cursor-pointer ${isPass ? 'bg-green-50 hover:bg-green-100' : 'bg-red-50 hover:bg-red-100'}`,
                 onclick: (e) => {
                     const details = e.currentTarget.nextElementSibling;
+                    const chevron = e.currentTarget.querySelector('.chevron-icon');
                     details.classList.toggle('hidden');
+                    if (chevron) {
+                        chevron.style.transform = details.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+                    }
                 }
             }, [
                 this.createElement('div', { className: 'flex items-center gap-3' }, [
@@ -248,11 +252,19 @@ export class DeveloperView extends Component {
                 ]),
                 this.createElement('div', { className: 'flex items-center gap-4 text-sm' }, [
                     this.createElement('span', { className: 'text-slate-500' }, [`${result.duration.toFixed(2)}s`]),
-                    this.createElement('span', { className: `font-bold ${isPass ? 'text-green-700' : 'text-red-700'}` }, [result.status])
+                    this.createElement('span', { className: `font-bold ${isPass ? 'text-green-700' : 'text-red-700'}` }, [result.status]),
+                    this.createElement('div', { className: 'flex items-center gap-1 text-slate-500 hover:text-slate-700' }, [
+                        this.createElement('span', { className: 'text-xs' }, ['Logi']),
+                        this.createElement('i', { 
+                            'data-lucide': 'chevron-down', 
+                            className: 'w-4 h-4 transition-transform duration-200 chevron-icon' 
+                        })
+                    ])
                 ])
             ]),
             this.createElement('div', { className: 'hidden bg-slate-900 text-slate-100 p-4 font-mono text-xs overflow-x-auto' }, [
-                this.createElement('pre', {}, [result.output])
+                this.createElement('div', { className: 'mb-2 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700 pb-1' }, ['Terminal Output']),
+                this.createElement('pre', { className: 'whitespace-pre-wrap' }, [result.output || 'No output captured'])
             ])
         ]);
     }

@@ -927,30 +927,82 @@ def get_system_info():
 def run_tests():
     def generate():
         try:
-            tests_dir = os.path.join(basedir, '../../tests')
-            test_files = [f for f in os.listdir(tests_dir) if f.startswith('test_') and f.endswith('.py')]
+            # Define categories and their paths relative to project root
+            test_categories = [
+                {'name': 'Integration', 'path': 'tests', 'pattern': 'test_*.py'},
+                {'name': 'Unit', 'path': 'tests/unit', 'pattern': 'test_*.py'},
+                {'name': 'Security', 'path': 'tests/security', 'pattern': 'test_*.py'},
+                {'name': 'Performance', 'path': 'tests/performance', 'pattern': 'test_*.py'}
+            ]
+
+            all_tests = []
+
+            for category in test_categories:
+                cat_dir = os.path.join(basedir, '../../', category['path'])
+                if os.path.exists(cat_dir):
+                    # Only list files, not directories
+                    files = [f for f in os.listdir(cat_dir) 
+                            if os.path.isfile(os.path.join(cat_dir, f)) 
+                            and f.startswith('test_') 
+                            and f.endswith('.py')]
+                    
+                    # Sort integration tests numerically
+                    if category['name'] == 'Integration':
+                        def sort_key(f):
+                            parts = f.split('_')
+                            if len(parts) > 1 and parts[1].isdigit():
+                                return int(parts[1])
+                            return f
+                        files.sort(key=sort_key)
+                    else:
+                        files.sort()
+
+                    for f in files:
+                        all_tests.append({
+                            'category': category['name'],
+                            'file': f,
+                            'rel_path': os.path.join(category['path'], f),
+                            'type': 'python'
+                        })
+
+            # Add Frontend Tests
+            frontend_dir = os.path.join(basedir, '../../cementery')
+            if os.path.exists(frontend_dir):
+                all_tests.append({
+                    'category': 'Frontend',
+                    'file': 'Vitest Suite',
+                    'type': 'command',
+                    'command': ['npm', 'run', 'test:run'],
+                    'cwd': frontend_dir
+                })
             
-            # Sort files numerically if possible (test_1, test_2, test_10)
-            def sort_key(f):
-                parts = f.split('_')
-                if len(parts) > 1 and parts[1].isdigit():
-                    return int(parts[1])
-                return f
-            
-            test_files.sort(key=sort_key)
-            
-            for test_file in test_files:
+            for test in all_tests:
                 start_time = datetime.now()
-                process = subprocess.run(
-                    [sys.executable, os.path.join('tests', test_file)],
-                    capture_output=True,
-                    text=True,
-                    cwd=os.path.join(basedir, '../../')
-                )
+                
+                if test.get('type') == 'command':
+                    cmd = test['command']
+                    # Handle Windows npm execution
+                    if platform.system() == 'Windows' and cmd[0] == 'npm':
+                        cmd[0] = 'npm.cmd'
+                        
+                    process = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        cwd=test['cwd']
+                    )
+                else:
+                    process = subprocess.run(
+                        [sys.executable, test['rel_path'], '-v'],
+                        capture_output=True,
+                        text=True,
+                        cwd=os.path.join(basedir, '../../')
+                    )
+
                 duration = (datetime.now() - start_time).total_seconds()
                 
                 result = {
-                    'name': test_file,
+                    'name': f"[{test['category']}] {test['file']}",
                     'status': 'PASS' if process.returncode == 0 else 'FAIL',
                     'output': process.stdout + process.stderr,
                     'duration': duration
