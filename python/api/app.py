@@ -4,8 +4,9 @@ import subprocess
 import sys
 import platform
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 from urllib.parse import quote_plus
+import mysql.connector
 from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -20,18 +21,27 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "../../cemetery.db")
 
 
-def parse_mysql_connection_string(raw_connection: Optional[str]):
-    """Parse key-value Azure MySQL connection string into SQLAlchemy URI."""
+def parse_mysql_kv(raw_connection: Optional[str]) -> Optional[Dict[str, str]]:
+    """Return dict of MySQL connection parts from Azure-style key/value string."""
     if not raw_connection:
         return None
-
     entries = [chunk for chunk in raw_connection.split(";") if chunk.strip()]
-    kv = {}
+    kv: Dict[str, str] = {}
     for entry in entries:
         if "=" not in entry:
             continue
         key, value = entry.split("=", 1)
         kv[key.strip().lower()] = value.strip()
+    if not kv:
+        return None
+    return kv
+
+
+def parse_mysql_connection_string(raw_connection: Optional[str]):
+    """Parse key-value Azure MySQL connection string into SQLAlchemy URI."""
+    kv = parse_mysql_kv(raw_connection)
+    if not kv:
+        return None
 
     db_name = kv.get("database") or kv.get("db")
     server = kv.get("server") or kv.get("host")
@@ -67,6 +77,31 @@ def parse_mysql_connection_string(raw_connection: Optional[str]):
     )
 
 
+def ensure_mysql_database(raw_connection: Optional[str], drop_flag: bool = False) -> None:
+    """Ensure target MySQL database exists; drop and recreate when requested."""
+    kv = parse_mysql_kv(raw_connection)
+    if not kv:
+        return
+
+    db_name = kv.get("database") or kv.get("db")
+    host = kv.get("server") or kv.get("host")
+    user = kv.get("user id") or kv.get("user") or kv.get("uid")
+    password = kv.get("password")
+    port = int(kv.get("port", "3306"))
+
+    if not all([db_name, host, user, password]):
+        return
+
+    conn = mysql.connector.connect(host=host, user=user, password=password, port=port)
+    conn.autocommit = True
+    cursor = conn.cursor()
+    if drop_flag:
+        cursor.execute(f"DROP DATABASE IF EXISTS `{db_name}`")
+    cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}` DEFAULT CHARACTER SET utf8mb4")
+    cursor.close()
+    conn.close()
+
+
 def resolve_database_uri():
     """Detect Azure MySQL settings or fall back to local SQLite for dev/tests."""
     azure_conn = os.getenv("AZURE_MYSQL_CONNECTIONSTRING")
@@ -75,6 +110,10 @@ def resolve_database_uri():
         return mysql_uri
     return f"sqlite:///{db_path}"
 
+azure_conn_raw = os.getenv("AZURE_MYSQL_CONNECTIONSTRING")
+clear_db_flag = os.getenv("CLEARDATABASE") == "1"
+if azure_conn_raw:
+    ensure_mysql_database(azure_conn_raw, drop_flag=clear_db_flag)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = resolve_database_uri()
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -91,7 +130,7 @@ db = SQLAlchemy(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="user")
 
     def set_password(self, password):
@@ -99,6 +138,21 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+
+def init_db_and_seed():
+    """Ensure tables exist and create default admin if missing."""
+    with app.app_context():
+        db.create_all()
+        if not User.query.filter_by(username="admin").first():
+            admin = User(username="admin", role="admin")
+            admin.set_password("admin123")
+            db.session.add(admin)
+            db.session.commit()
+
+
+# Initialize database and seed admin on startup
+init_db_and_seed()
 
 class Grave(db.Model):
     id = db.Column(db.Integer, primary_key=True)
