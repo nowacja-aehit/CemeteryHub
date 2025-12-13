@@ -10,14 +10,18 @@ import mysql.connector
 from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Konfiguracja aplikacji
-app = Flask(__name__, static_folder="../../public")
+# Używamy ścieżek absolutnych, aby uniknąć problemów w różnych środowiskach (Azure/Lokalnie)
+basedir = os.path.abspath(os.path.dirname(__file__))
+static_path = os.path.join(basedir, "../../public")
+
+app = Flask(__name__, static_folder=static_path)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Konfiguracja bazy danych
-basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "../../cemetery.db")
 
 
@@ -144,11 +148,14 @@ def init_db_and_seed():
     """Ensure tables exist and create default admin if missing."""
     with app.app_context():
         db.create_all()
-        if not User.query.filter_by(username="admin").first():
-            admin = User(username="admin", role="admin")
-            admin.set_password("admin123")
-            db.session.add(admin)
-            db.session.commit()
+        try:
+            if not User.query.filter_by(username="admin").first():
+                admin = User(username="admin", role="admin")
+                admin.set_password("admin123")
+                db.session.add(admin)
+                db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
 
 
 # Initialize database and seed admin on startup
@@ -1048,6 +1055,17 @@ def run_tests():
 
             all_tests = []
 
+            # Prepare environment for tests
+            env = os.environ.copy()
+            port = os.getenv("PORT", "5000")
+            env["BASE_URL"] = f"http://localhost:{port}"
+
+            # Force tests to use local SQLite to avoid messing with Prod DB (Azure MySQL)
+            # and to prevent IntegrityError when creating 'admin' user in tests.
+            # This ensures tests run in isolation from the production database.
+            if "AZURE_MYSQL_CONNECTIONSTRING" in env:
+                del env["AZURE_MYSQL_CONNECTIONSTRING"]
+
             for category in test_categories:
                 cat_dir = os.path.join(basedir, "../../", category["path"])
                 if os.path.exists(cat_dir):
@@ -1100,14 +1118,16 @@ def run_tests():
                         cmd,
                         capture_output=True,
                         text=True,
-                        cwd=test["cwd"]
+                        cwd=test["cwd"],
+                        env=env
                     )
                 else:
                     process = subprocess.run(
                         [sys.executable, test["rel_path"], "-v"],
                         capture_output=True,
                         text=True,
-                        cwd=os.path.join(basedir, "../../")
+                        cwd=os.path.join(basedir, "../../"),
+                        env=env
                     )
 
                 duration = (datetime.now() - start_time).total_seconds()
@@ -1312,8 +1332,9 @@ def seed_data():
 def clear_data():
     try:
         # Delete all data except admin user
-        Grave.query.delete()
+        # Must delete dependent tables first (Foreign Keys)
         ServiceRequest.query.delete()
+        Grave.query.delete()
         Reservation.query.delete()
         ContactMessage.query.delete()
         Article.query.delete()
@@ -1361,12 +1382,13 @@ def static_proxy(path):
 
 if __name__ == "__main__":
     init_db()
-    print("Serwer uruchomiony na http://localhost:5000")
-    # Exclude database file from reloader watch list
-    # Also exclude public folder if it's being watched (though Flask usually only watches .py)
-    # But if the user is running tests that modify files, we want to be careful.
-    # However, Flask reloader by default only watches .py files.
-    # If the user is using VS Code Live Server, that's separate.
-    # But if the user says "przeładowanie strony", it could be the browser reloading.
     
-    app.run(debug=True, port=5000, use_reloader=True)
+    # Wykrywanie środowiska Azure (zmienna WEBSITE_SITE_NAME jest dostępna w Azure App Service)
+    if "WEBSITE_SITE_NAME" in os.environ:
+        print("Wykryto środowisko Azure. Uruchamianie na 0.0.0.0...")
+        port = int(os.environ.get("PORT", 8000))
+        app.run(host="0.0.0.0", port=port, debug=False)
+    else:
+        print("Wykryto środowisko lokalne. Uruchamianie na localhost...")
+        print("Serwer uruchomiony na http://localhost:5000")
+        app.run(debug=True, port=5000, use_reloader=True)
