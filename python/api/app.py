@@ -11,6 +11,7 @@ from flask import Flask, request, jsonify, send_from_directory, Response, stream
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text, inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import HTTPException
 
@@ -69,6 +70,8 @@ def parse_mysql_connection_string(raw_connection: Optional[str]):
         ssl_params.append(f"ssl_ca={quote_plus(ssl_ca_env)}")
     elif os.path.exists(default_ssl_ca):
         ssl_params.append(f"ssl_ca={quote_plus(default_ssl_ca)}")
+    else:
+        print(f"Warning: SSL CA cert not found at {default_ssl_ca}. Connection might fail if SSL is enforced.")
 
     ssl_disabled_flag = os.getenv("AZURE_MYSQL_SSL_DISABLED")
     if ssl_disabled_flag:
@@ -162,11 +165,70 @@ def init_db_and_seed():
     """Ensure tables exist and create default admin if missing."""
     with app.app_context():
         try:
+            # Verify connection
+            db.session.execute(text("SELECT 1"))
+            
             db.create_all()
+            
+            # Auto-migration for missing columns (MySQL/SQLite compatible)
+            try:
+                inspector = inspect(db.engine)
+                with db.engine.connect() as conn:
+                    # 1. ServiceRequest migrations
+                    if inspector.has_table("service_request"):
+                        columns = [c["name"] for c in inspector.get_columns("service_request")]
+                        if "discount" not in columns:
+                            print("Migrating: Adding 'discount' to service_request")
+                            conn.execute(text("ALTER TABLE service_request ADD COLUMN discount FLOAT"))
+                        if "admin_notes" not in columns:
+                            print("Migrating: Adding 'admin_notes' to service_request")
+                            conn.execute(text("ALTER TABLE service_request ADD COLUMN admin_notes TEXT"))
+                        if "services" not in columns:
+                            print("Migrating: Adding 'services' to service_request")
+                            conn.execute(text("ALTER TABLE service_request ADD COLUMN services TEXT"))
+                        if "notes" not in columns:
+                            print("Migrating: Adding 'notes' to service_request")
+                            conn.execute(text("ALTER TABLE service_request ADD COLUMN notes TEXT"))
+                        if "scheduled_date" not in columns:
+                            print("Migrating: Adding 'scheduled_date' to service_request")
+                            conn.execute(text("ALTER TABLE service_request ADD COLUMN scheduled_date VARCHAR(20)"))
+
+                    # 2. Section migrations (update_schema_v7.py)
+                    if inspector.has_table("section"):
+                        columns = [c["name"] for c in inspector.get_columns("section")]
+                        if "total_rows" not in columns:
+                            print("Migrating: Adding 'total_rows' to section")
+                            conn.execute(text("ALTER TABLE section ADD COLUMN total_rows INTEGER DEFAULT 4"))
+                        if "total_cols" not in columns:
+                            print("Migrating: Adding 'total_cols' to section")
+                            conn.execute(text("ALTER TABLE section ADD COLUMN total_cols INTEGER DEFAULT 6"))
+
+                    # 3. FAQ migrations (update_schema_v9.py)
+                    if inspector.has_table("faq"):
+                        columns = [c["name"] for c in inspector.get_columns("faq")]
+                        if "display_order" not in columns:
+                            print("Migrating: Adding 'display_order' to faq")
+                            conn.execute(text("ALTER TABLE faq ADD COLUMN display_order INTEGER DEFAULT 0"))
+
+                    conn.commit()
+            except Exception as e:
+                print(f"Migration warning: {e}")
+
             if not User.query.filter_by(username="admin").first():
                 admin = User(username="admin", role="admin")
                 admin.set_password("admin123")
                 db.session.add(admin)
+                db.session.commit()
+            
+            # Seed default sections if missing (replaces fix_data.py)
+            if Section.query.count() == 0:
+                sections_data = [
+                    Section(name="A", description="Sektor zabytkowy", total_rows=10, total_cols=10),
+                    Section(name="B", description="Sektor główny", total_rows=15, total_cols=20),
+                    Section(name="C", description="Sektor nowy", total_rows=10, total_cols=15),
+                    Section(name="D", description="Urny", total_rows=5, total_cols=10)
+                ]
+                db.session.bulk_save_objects(sections_data)
                 db.session.commit()
         except Exception as e:
             print(f"Database initialization error: {e}")
