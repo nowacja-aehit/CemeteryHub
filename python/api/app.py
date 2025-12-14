@@ -210,6 +210,13 @@ def init_db_and_seed():
                             print("Migrating: Adding 'display_order' to faq")
                             conn.execute(text("ALTER TABLE faq ADD COLUMN display_order INTEGER DEFAULT 0"))
 
+                    # 4. Service migrations
+                    if inspector.has_table("service"):
+                        columns = [c["name"] for c in inspector.get_columns("service")]
+                        if "type" not in columns:
+                            print("Migrating: Adding 'type' to service")
+                            conn.execute(text("ALTER TABLE service ADD COLUMN type VARCHAR(20) DEFAULT 'main'"))
+
                     conn.commit()
             except Exception as e:
                 print(f"Migration warning: {e}")
@@ -258,7 +265,9 @@ class Grave(db.Model):
             "section": self.section,
             "row": self.row,
             "plot": self.plot,
-            "coordinates": f"{self.coord_x},{self.coord_y}" if self.coord_x is not None and self.coord_y is not None else "0,0"
+            "coordinates": f"{self.coord_x},{self.coord_y}" if self.coord_x is not None and self.coord_y is not None else "0,0",
+            "x": self.coord_x if self.coord_x is not None else 0,
+            "y": self.coord_y if self.coord_y is not None else 0
         }
 
 class ServiceRequest(db.Model):
@@ -379,6 +388,7 @@ class Service(db.Model):
     slug = db.Column(db.String(100))
     price = db.Column(db.Float)
     category = db.Column(db.String(50))
+    type = db.Column(db.String(20), default="main")
 
     def to_dict(self):
         return {
@@ -386,7 +396,8 @@ class Service(db.Model):
             "name": self.name,
             "slug": self.slug,
             "price": self.price,
-            "category": self.category
+            "category": self.category,
+            "type": self.type or "main"
         }
 
 class ContactMessage(db.Model):
@@ -877,7 +888,8 @@ def add_service():
         name=data.get("name"),
         slug=data.get("slug"),
         price=data.get("price"),
-        category=data.get("category")
+        category=data.get("category"),
+        type=data.get("type", "main")
     )
     db.session.add(new_service)
     db.session.commit()
@@ -891,6 +903,7 @@ def update_service(id):
     service.slug = data.get("slug", service.slug)
     service.price = data.get("price", service.price)
     service.category = data.get("category", service.category)
+    service.type = data.get("type", service.type)
     db.session.commit()
     return jsonify(service.to_dict())
 
@@ -1286,12 +1299,12 @@ def seed_data():
 
         # 3. Services
         services_data = [
-            Service(name="Sprzątanie grobu (mały)", slug="cleaning-small", price=100.0, category="Sprzątanie"),
-            Service(name="Sprzątanie grobu (duży)", slug="cleaning-large", price=150.0, category="Sprzątanie"),
-            Service(name="Mycie nagrobka", slug="washing", price=80.0, category="Konserwacja"),
-            Service(name="Znicz duży", slug="candle-large", price=35.0, category="Produkty"),
-            Service(name="Wiązanka kwiatów", slug="flowers", price=120.0, category="Produkty"),
-            Service(name="Opieka całoroczna", slug="year-care", price=1200.0, category="Opieka")
+            Service(name="Sprzątanie grobu (mały)", slug="cleaning-small", price=100.0, category="Sprzątanie", type="main"),
+            Service(name="Sprzątanie grobu (duży)", slug="cleaning-large", price=150.0, category="Sprzątanie", type="main"),
+            Service(name="Mycie nagrobka", slug="washing", price=80.0, category="Konserwacja", type="main"),
+            Service(name="Znicz duży", slug="candle-large", price=35.0, category="Produkty", type="additional"),
+            Service(name="Wiązanka kwiatów", slug="flowers", price=120.0, category="Produkty", type="additional"),
+            Service(name="Opieka całoroczna", slug="year-care", price=1200.0, category="Opieka", type="main")
         ]
         # Check if services exist to avoid duplicates if run multiple times (though clear-data is usually run first)
         if Service.query.count() == 0:
