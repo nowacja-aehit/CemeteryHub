@@ -235,8 +235,8 @@ def init_db_and_seed():
             db.session.rollback() # Rollback transaction if failed
 
 
-# Initialize database and seed admin on startup
-init_db_and_seed()
+# Note: init_db_and_seed() call moved to the end of file 
+# to ensure all models are defined before db.create_all() runs.
 
 class Grave(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1099,7 +1099,6 @@ def add_category():
     db.session.commit()
     return jsonify(new_category.to_dict()), 201
 
-@app.route("/api/admin/categories/<int:id>", methods=["DELETE"])
 # --- DevTools API ---
 
 @app.route("/api/admin/dev/system-info", methods=["GET"])
@@ -1429,6 +1428,7 @@ def clear_data():
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/admin/categories/<int:id>", methods=["DELETE"])
 def delete_category(id):
     category = Category.query.get_or_404(id)
     db.session.delete(category)
@@ -1454,9 +1454,11 @@ def admin_index():
 def static_proxy(path):
     return send_from_directory(app.static_folder, path)
 
+
+# Initialize database and seed admin on startup
+init_db_and_seed()
+
 if __name__ == "__main__":
-    # init_db_and_seed() jest już wywoływane globalnie (linia 164), więc nie musimy go tu wołać ponownie.
-    
     # Wykrywanie środowiska Azure (zmienna WEBSITE_SITE_NAME jest dostępna w Azure App Service)
     if "WEBSITE_SITE_NAME" in os.environ:
         print("Wykryto środowisko Azure. Uruchamianie na 0.0.0.0...")
