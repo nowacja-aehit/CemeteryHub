@@ -12,6 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.exceptions import HTTPException
 
 # Konfiguracja aplikacji
 # Używamy ścieżek absolutnych, aby uniknąć problemów w różnych środowiskach (Azure/Lokalnie)
@@ -1371,6 +1372,16 @@ def delete_category(id):
     db.session.delete(category)
     db.session.commit()
     return jsonify({"message": "Kategoria usunięta"})
+
+# --- Global Error Handler ---
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Return JSON instead of HTML for HTTP errors."""
+    if isinstance(e, HTTPException):
+        return e
+    print(f"Global Error: {e}")
+    return jsonify({"error": str(e)}), 500
 
 # --- Inicjalizacja ---
 @app.route("/admin")
