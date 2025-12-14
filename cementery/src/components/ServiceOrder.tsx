@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
@@ -9,6 +9,19 @@ import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
 import { CheckCircle2, Wrench } from 'lucide-react';
 import type { GraveLocation } from '../App';
+
+interface Service {
+  id: number;
+  name: string;
+  price: number;
+  category: string;
+}
+
+interface ServiceCategory {
+  id: number;
+  name: string;
+  parent_id: string | null;
+}
 
 interface ServiceOrderProps {
   selectedGrave: GraveLocation | null;
@@ -26,21 +39,40 @@ export function ServiceOrder({ selectedGrave, onGraveSelect }: ServiceOrderProps
     notes: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const services = [
-    { id: 'cleaning', name: 'Tombstone Cleaning', price: '$150' },
-    { id: 'repair', name: 'Tombstone Repair', price: '$300+' },
-    { id: 'engraving', name: 'Additional Engraving', price: '$200+' },
-    { id: 'restoration', name: 'Full Restoration', price: '$500+' },
-    { id: 'landscaping', name: 'Plot Landscaping', price: '$100' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [servicesRes, categoriesRes] = await Promise.all([
+          fetch('/api/services'),
+          fetch('/api/categories')
+        ]);
+        const servicesData = await servicesRes.json();
+        const categoriesData = await categoriesRes.json();
+        setServices(servicesData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Failed to fetch services data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const additionalServices = [
-    { id: 'flowers', name: 'Fresh Flowers Placement', price: '$50' },
-    { id: 'photo', name: 'Before/After Photos', price: '$25' },
-    { id: 'sealant', name: 'Protective Sealant', price: '$75' },
-  ];
+  const primaryServices = services.filter(s => {
+    const category = categories.find(c => c.name === s.category);
+    return category?.parent_id === 'Usługi podstawowe';
+  });
 
+  const additionalServices = services.filter(s => {
+    const category = categories.find(c => c.name === s.category);
+    return category?.parent_id === 'Usługi dodatkowe';
+  });
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
@@ -68,6 +100,14 @@ export function ServiceOrder({ selectedGrave, onGraveSelect }: ServiceOrderProps
     }));
   };
 
+  if (loading) {
+    return (
+      <Card className="max-w-2xl mx-auto p-8 text-center">
+        <p>Ładowanie usług...</p>
+      </Card>
+    );
+  }
+  
   if (submitted) {
     return (
       <Card className="max-w-2xl mx-auto p-8">
@@ -111,116 +151,80 @@ export function ServiceOrder({ selectedGrave, onGraveSelect }: ServiceOrderProps
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Contact Information */}
-          <div className="space-y-4">
-            <h3 className="text-slate-900">Contact Information</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name *</Label>
-              <Input
-                id="name"
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter your full name"
-              />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
+          {/* Grave Selection Info */}
+          {!selectedGrave ? (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Please select a grave from the map first to order a service.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {/* Primary Service Selection */}
+              <div>
+                <Label htmlFor="service">Wybierz usługę podstawową</Label>
+                <Select
+                  name="service"
+                  value={formData.service}
+                  onValueChange={value => setFormData(prev => ({ ...prev, service: value }))}
                   required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="your@email.com"
-                />
+                >
+                  <SelectTrigger id="service">
+                    <SelectValue placeholder="Wybierz usługę..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {primaryServices.map(service => (
+                      <SelectItem key={service.id} value={service.name}>
+                        {service.name} - {service.price} PLN
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="(555) 123-4567"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Service Selection */}
-          <div className="space-y-4">
-            <h3 className="text-slate-900">Service Selection</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="service">Primary Service *</Label>
-              <Select
-                value={formData.service}
-                onValueChange={(value) => setFormData({ ...formData, service: value })}
-                required
-              >
-                <SelectTrigger id="service">
-                  <SelectValue placeholder="Select a service" />
-                </SelectTrigger>
-                <SelectContent>
-                  {services.map(service => (
-                    <SelectItem key={service.id} value={service.id}>
-                      {service.name} - {service.price}
-                    </SelectItem>
+              {/* Additional Services */}
+              <div>
+                <Label>Wybierz usługi dodatkowe (opcjonalnie)</Label>
+                <div className="space-y-2 mt-2">
+                  {additionalServices.map(service => (
+                    <div key={service.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`add-${service.id}`}
+                        checked={formData.additionalServices.includes(service.name)}
+                        onCheckedChange={() => toggleAdditionalService(service.name)}
+                      />
+                      <Label htmlFor={`add-${service.id}`} className="font-normal">
+                        {service.name} - {service.price} PLN
+                      </Label>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Additional Services (Optional)</Label>
-              {additionalServices.map(service => (
-                <div key={service.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={service.id}
-                    checked={formData.additionalServices.includes(service.id)}
-                    onCheckedChange={() => toggleAdditionalService(service.id)}
-                  />
-                  <label
-                    htmlFor={service.id}
-                    className="flex-1 cursor-pointer text-slate-700"
-                  >
-                    {service.name} - {service.price}
-                  </label>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="date">Preferred Service Date *</Label>
-              <Input
-                id="date"
-                type="date"
-                required
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="date">Preferred Service Date *</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Any special requests or concerns..."
-                rows={4}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="notes">Additional Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Any special requests or concerns..."
+                  rows={4}
+                />
+              </div>
             </div>
-          </div>
-
+          )}
           <Button type="submit" className="w-full" disabled={!selectedGrave}>
             {selectedGrave ? 'Submit Service Request' : 'Please select a location first'}
           </Button>

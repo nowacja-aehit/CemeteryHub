@@ -216,6 +216,9 @@ def init_db_and_seed():
                         if "type" not in columns:
                             print("Migrating: Adding 'type' to service")
                             conn.execute(text("ALTER TABLE service ADD COLUMN type VARCHAR(20) DEFAULT 'basic'"))
+                        if "is_visible" not in columns:
+                            print("Migrating: Adding 'is_visible' to service")
+                            conn.execute(text("ALTER TABLE service ADD COLUMN is_visible BOOLEAN DEFAULT 1"))
 
                     conn.commit()
             except Exception as e:
@@ -272,6 +275,10 @@ class Grave(db.Model):
             },
             "x": self.coord_x if self.coord_x is not None else 0,
             "y": self.coord_y if self.coord_y is not None else 0
+            "x": self.coord_x if self.coord_x is not None else 0, # For image maps
+            "y": self.coord_y if self.coord_y is not None else 0, # For image maps
+            "lat": self.coord_x if self.coord_x is not None else 0, # For Leaflet/Geo maps (using x as lat)
+            "lng": self.coord_y if self.coord_y is not None else 0  # For Leaflet/Geo maps (using y as lng)
         }
 
 class ServiceRequest(db.Model):
@@ -393,6 +400,8 @@ class Service(db.Model):
     price = db.Column(db.Float)
     category = db.Column(db.String(50))
     type = db.Column(db.String(20), default="basic")
+    type = db.Column(db.String(20), default="main")
+    is_visible = db.Column(db.Boolean, default=True)
 
     def to_dict(self):
         return {
@@ -402,6 +411,8 @@ class Service(db.Model):
             "price": self.price,
             "category": self.category,
             "type": self.type or "basic"
+            "type": self.type or "main",
+            "isVisible": self.is_visible
         }
 
 class ContactMessage(db.Model):
@@ -882,6 +893,13 @@ def delete_reservation(id):
 
 @app.route("/api/services", methods=["GET"])
 def get_services():
+    # Public endpoint: return only visible services
+    services = Service.query.filter_by(is_visible=True).all()
+    return jsonify([s.to_dict() for s in services])
+
+@app.route("/api/admin/services", methods=["GET"])
+def get_admin_services():
+    # Admin endpoint: return all services
     services = Service.query.all()
     return jsonify([s.to_dict() for s in services])
 
@@ -894,6 +912,8 @@ def add_service():
         price=data.get("price"),
         category=data.get("category"),
         type=data.get("type", "basic")
+        type=data.get("type", "main"),
+        is_visible=data.get("isVisible", True)
     )
     db.session.add(new_service)
     db.session.commit()
@@ -908,6 +928,8 @@ def update_service(id):
     service.price = data.get("price", service.price)
     service.category = data.get("category", service.category)
     service.type = data.get("type", service.type)
+    if "isVisible" in data:
+        service.is_visible = data.get("isVisible")
     db.session.commit()
     return jsonify(service.to_dict())
 
@@ -1309,6 +1331,12 @@ def seed_data():
             Service(name="Znicz duży", slug="candle-large", price=35.0, category="Produkty", type="additional"),
             Service(name="Wiązanka kwiatów", slug="flowers", price=120.0, category="Produkty", type="additional"),
             Service(name="Opieka całoroczna", slug="year-care", price=1200.0, category="Opieka", type="basic")
+            Service(name="Sprzątanie grobu (mały)", slug="cleaning-small", price=100.0, category="Sprzątanie", type="main", is_visible=True),
+            Service(name="Sprzątanie grobu (duży)", slug="cleaning-large", price=150.0, category="Sprzątanie", type="main", is_visible=True),
+            Service(name="Mycie nagrobka", slug="washing", price=80.0, category="Konserwacja", type="main", is_visible=True),
+            Service(name="Znicz duży", slug="candle-large", price=35.0, category="Produkty", type="additional", is_visible=True),
+            Service(name="Wiązanka kwiatów", slug="flowers", price=120.0, category="Produkty", type="additional", is_visible=True),
+            Service(name="Opieka całoroczna", slug="year-care", price=1200.0, category="Opieka", type="main", is_visible=True)
         ]
         # Check if services exist to avoid duplicates if run multiple times (though clear-data is usually run first)
         if Service.query.count() == 0:

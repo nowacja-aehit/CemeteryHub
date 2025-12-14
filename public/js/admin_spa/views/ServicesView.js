@@ -195,61 +195,56 @@ export class ServicesView extends Component {
 
     openCategoriesModal() {
         const renderCategoriesList = () => {
-            const list = document.createElement('div');
-            list.className = 'space-y-2 mt-4 max-h-60 overflow-y-auto';
+            const container = this.createElement('div', { className: 'space-y-4 mt-4' });
+
+            const mainCategories = [
+                { name: 'Usługi podstawowe', parent_id: null },
+                { name: 'Usługi dodatkowe', parent_id: null }
+            ];
+
+            mainCategories.forEach(mainCat => {
+                const subCategories = this.state.categories.filter(c => c.parent_id === mainCat.name);
+
+                const categorySection = this.createElement('div', { className: 'p-3 rounded-lg border border-slate-200 bg-slate-50' }, [
+                    this.createElement('h4', { className: 'font-semibold text-slate-800 mb-2' }, [mainCat.name]),
+                    this.createElement('div', { className: 'space-y-2' }, 
+                        subCategories.length > 0 
+                            ? subCategories.map(cat => this.createCategoryItem(cat))
+                            : [this.createElement('p', { className: 'text-sm text-slate-500 italic' }, ['Brak podkategorii'])]
+                    )
+                ]);
+                container.appendChild(categorySection);
+            });
             
-            if (this.state.categories.length === 0) {
-                list.innerHTML = '<div class="text-sm text-slate-500 italic">Brak kategorii</div>';
-            } else {
-                this.state.categories.forEach(cat => {
-                    const item = document.createElement('div');
-                    item.className = 'flex justify-between items-center bg-slate-50 p-2 rounded border border-slate-200';
-                    item.innerHTML = `
-                        <span class="text-sm font-medium">${cat.name}</span>
-                        <button class="text-red-500 hover:text-red-700 p-1" data-id="${cat.id}">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
-                    `;
-                    item.querySelector('button').onclick = () => this.deleteCategory(cat.id, modal);
-                    list.appendChild(item);
-                });
-            }
-            return list;
+            return container;
         };
 
         let newCategoryName = '';
-        const inputContainer = this.createElement('div', { className: 'flex gap-2' }, [
+        let selectedMainCategory = 'Usługi podstawowe';
+
+        const inputContainer = this.createElement('div', { className: 'flex flex-col sm:flex-row gap-2' }, [
             this.createElement('input', {
                 type: 'text',
-                placeholder: 'Nowa kategoria...',
+                placeholder: 'Nazwa nowej podkategorii...',
                 className: 'flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm',
                 oninput: (e) => newCategoryName = e.target.value
             }),
+            this.createSelect('', [
+                { value: 'Usługi podstawowe', label: 'Do: Usługi podstawowe' },
+                { value: 'Usługi dodatkowe', label: 'Do: Usługi dodatkowe' }
+            ], selectedMainCategory, v => selectedMainCategory = v),
             this.createElement('button', {
-                className: 'bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm',
-                onclick: async () => {
-                    if (!newCategoryName.trim()) return;
-                    try {
-                        await API.post('/api/admin/categories', { name: newCategoryName });
-                        await this.loadData(); // Reload to get new list
-                        // Refresh modal content
-                        const newList = renderCategoriesList();
-                        const oldList = modal.element.querySelector('.space-y-2.mt-4');
-                        if (oldList) oldList.replaceWith(newList);
-                        if (window.lucide) window.lucide.createIcons();
-                        // Clear input
-                        inputContainer.querySelector('input').value = '';
-                        newCategoryName = '';
-                    } catch (err) {
-                        alert('Błąd dodawania kategorii: ' + err.message);
-                    }
-                }
+                className: 'bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm flex-shrink-0',
+                onclick: () => this.addCategory(newCategoryName, selectedMainCategory, modal, inputContainer)
             }, ['Dodaj'])
         ]);
 
         const modal = new Modal({
             title: 'Zarządzanie Kategoriami',
             content: [
+                this.createElement('p', { className: 'text-sm text-slate-600 mb-4' }, [
+                    'Zarządzaj podkategoriami dla głównych grup usług. Kategorie główne są stałe.'
+                ]),
                 inputContainer,
                 renderCategoriesList()
             ],
@@ -260,24 +255,56 @@ export class ServicesView extends Component {
         if (window.lucide) window.lucide.createIcons();
     }
 
-    async deleteCategory(id, modal) {
-        if (!confirm('Czy na pewno chcesz usunąć tę kategorię?')) return;
+    createCategoryItem(cat) {
+        const item = this.createElement('div', { className: 'flex justify-between items-center bg-white p-2 rounded border border-slate-300' }, [
+            this.createElement('span', { className: 'text-sm font-medium text-slate-700' }, [cat.name]),
+            this.createElement('button', { 
+                className: 'text-red-500 hover:text-red-700 p-1',
+                onclick: () => this.deleteCategory(cat.id)
+            }, [
+                this.createElement('i', { 'data-lucide': 'trash-2', className: 'w-4 h-4' })
+            ])
+        ]);
+        return item;
+    }
+
+    async addCategory(name, parent, modal, inputContainer) {
+        if (!name.trim()) return;
+        try {
+            await API.post('/api/admin/categories', { name, parent_id: parent });
+            await this.loadData();
+            
+            const newList = modal.element.querySelector('.space-y-4.mt-4');
+            if (newList) {
+                // Re-render categories list
+                const freshList = this.openCategoriesModal.toString().match(/renderCategoriesList\s*=\s*\(\)\s*=>\s*({[\s\S]*?});/)[1];
+                const newRenderedList = eval(`(${freshList})`)();
+                newList.innerHTML = newRenderedList.innerHTML;
+            }
+            if (window.lucide) window.lucide.createIcons();
+            
+            inputContainer.querySelector('input').value = '';
+        } catch (err) {
+            alert('Błąd dodawania kategorii: ' + err.message);
+        }
+    }
+
+    async deleteCategory(id) {
+        if (!confirm('Czy na pewno chcesz usunąć tę kategorię? Usługi w tej kategorii zostaną bez kategorii.')) return;
         try {
             await API.delete(`/api/admin/categories/${id}`);
-            await this.loadData();
-            // Refresh modal content
-            // We need to re-open or refresh the list. 
-            // Since renderCategoriesList is inside openCategoriesModal scope, we can't easily call it.
-            // But we can close and reopen or manipulate DOM.
-            // Simpler: close and reopen for now or just refresh the view behind.
-            // Better: The delete button click handler is inside the modal scope, so we can refresh the list there.
-            // I'll implement a simple refresh logic in the onclick handler above.
-            
-            // Actually, I implemented the refresh logic inside the onclick above for adding.
-            // For deleting, I need to do similar.
-            // Let's rewrite openCategoriesModal to be more robust or just close/reopen.
-            modal.close();
-            this.openCategoriesModal();
+            await this.loadData(); // Reload all data
+            // This is a bit of a hack. Ideally the modal should have its own state management.
+            // For now, we rely on the main component's state.
+            // A full re-render of the modal content is the simplest way.
+            const modalElement = document.querySelector('.modal-container');
+            if (modalElement) {
+                const modalInstance = Modal.activeInstances[Modal.activeInstances.length - 1];
+                if (modalInstance) {
+                    modalInstance.close();
+                    this.openCategoriesModal();
+                }
+            }
         } catch (err) {
             alert('Błąd usuwania kategorii: ' + err.message);
         }

@@ -29,7 +29,7 @@ System zarządzania cmentarzem z interfejsem dla administratora i użytkownika.
 1. Przejdź do katalogu głównego.
 2. Zainstaluj zależności: `pip install -r requirements.txt`
 3. Ustaw zmienne środowiskowe (Azure MySQL):
-   - `AZURE_MYSQL_CONNECTIONSTRING="Database=cemeteryhub-database;Server=cemeteryhub-server.mysql.database.azure.com;User Id=hvzbaezbks;Password=Tv$qm98sacT1Z6bN"`
+   - `AZURE_MYSQL_CONNECTIONSTRING="Database=twoja_nazwa_bazy;Server=twoj_serwer.mysql.database.azure.com;User Id=twoj_uzytkownik;Password=twoje_haslo"`
    - Opcjonalnie `AZURE_MYSQL_SSL_CA` ze ścieżką do certyfikatu CA (domyślnie `python/api/certs/DigiCertGlobalRootG2.crt.pem`).
    - Jeśli zmienna nie jest ustawiona, aplikacja użyje lokalnej bazy SQLite (`cemetery.db`).
 4. Uruchom serwer: `python python/api/app.py`
@@ -59,4 +59,3 @@ Aby uruchomić testy jednostkowe:
 ```bash
 python tests/test_api.py
 ```
-
