@@ -48,7 +48,7 @@ def parse_mysql_connection_string(raw_connection: Optional[str]):
         return None
 
     db_name = kv.get("database") or kv.get("db")
-    server = kv.get("server") or kv.get("host")
+    server = kv.get("server") or kv.get("host") or kv.get("data source") or kv.get("datasource")
     user = kv.get("user id") or kv.get("user") or kv.get("uid")
     password = kv.get("password")
     port = kv.get("port", "3306")
@@ -88,7 +88,7 @@ def ensure_mysql_database(raw_connection: Optional[str], drop_flag: bool = False
         return
 
     db_name = kv.get("database") or kv.get("db")
-    host = kv.get("server") or kv.get("host")
+    host = kv.get("server") or kv.get("host") or kv.get("data source") or kv.get("datasource")
     user = kv.get("user id") or kv.get("user") or kv.get("uid")
     password = kv.get("password")
     port = int(kv.get("port", "3306"))
@@ -96,14 +96,25 @@ def ensure_mysql_database(raw_connection: Optional[str], drop_flag: bool = False
     if not all([db_name, host, user, password]):
         return
 
-    conn = mysql.connector.connect(host=host, user=user, password=password, port=port)
-    conn.autocommit = True
-    cursor = conn.cursor()
-    if drop_flag:
-        cursor.execute(f"DROP DATABASE IF EXISTS `{db_name}`")
-    cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}` DEFAULT CHARACTER SET utf8mb4")
-    cursor.close()
-    conn.close()
+    try:
+        # Konfiguracja SSL dla surowego połączenia (wymagane przez Azure)
+        ssl_ca = os.path.join(basedir, "certs", "DigiCertGlobalRootG2.crt.pem")
+        connect_args = {
+            "host": host, "user": user, "password": password, "port": port
+        }
+        if os.path.exists(ssl_ca):
+            connect_args["ssl_ca"] = ssl_ca
+
+        conn = mysql.connector.connect(**connect_args)
+        conn.autocommit = True
+        cursor = conn.cursor()
+        if drop_flag:
+            cursor.execute(f"DROP DATABASE IF EXISTS `{db_name}`")
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}` DEFAULT CHARACTER SET utf8mb4")
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: Could not ensure database exists (might be managed or firewall issue): {e}")
 
 
 def resolve_database_uri():
@@ -111,7 +122,9 @@ def resolve_database_uri():
     azure_conn = os.getenv("AZURE_MYSQL_CONNECTIONSTRING")
     mysql_uri = parse_mysql_connection_string(azure_conn)
     if mysql_uri:
+        print("Using Azure MySQL Database")
         return mysql_uri
+    print(f"Using Local SQLite: {db_path}")
     return f"sqlite:///{db_path}"
 
 azure_conn_raw = os.getenv("AZURE_MYSQL_CONNECTIONSTRING")
@@ -147,15 +160,16 @@ class User(db.Model):
 def init_db_and_seed():
     """Ensure tables exist and create default admin if missing."""
     with app.app_context():
-        db.create_all()
         try:
+            db.create_all()
             if not User.query.filter_by(username="admin").first():
                 admin = User(username="admin", role="admin")
                 admin.set_password("admin123")
                 db.session.add(admin)
                 db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
+        except Exception as e:
+            print(f"Database initialization error: {e}")
+            db.session.rollback() # Rollback transaction if failed
 
 
 # Initialize database and seed admin on startup
@@ -1359,19 +1373,6 @@ def delete_category(id):
     return jsonify({"message": "Kategoria usunięta"})
 
 # --- Inicjalizacja ---
-
-def init_db():
-    with app.app_context():
-        db.create_all()
-        
-        # Utwórz admina jeśli nie istnieje
-        if not User.query.filter_by(username="admin").first():
-            admin = User(username="admin")
-            admin.set_password("admin123")
-            db.session.add(admin)
-            db.session.commit()
-            print("Utworzono użytkownika admin/admin123")
-
 @app.route("/admin")
 def admin_index():
     return send_from_directory(app.static_folder, "html/admin.html")
@@ -1381,7 +1382,7 @@ def static_proxy(path):
     return send_from_directory(app.static_folder, path)
 
 if __name__ == "__main__":
-    init_db()
+    # init_db_and_seed() jest już wywoływane globalnie (linia 164), więc nie musimy go tu wołać ponownie.
     
     # Wykrywanie środowiska Azure (zmienna WEBSITE_SITE_NAME jest dostępna w Azure App Service)
     if "WEBSITE_SITE_NAME" in os.environ:

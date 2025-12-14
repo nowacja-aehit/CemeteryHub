@@ -1,10 +1,13 @@
 import unittest
+import os
 import json
 import urllib.request
 import urllib.error
 
 class TestFAQ(unittest.TestCase):
-    BASE_URL = "http://localhost:5000/api"
+    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+    if not BASE_URL.endswith("/api"):
+        BASE_URL = f"{BASE_URL}/api"
 
     def test_public_faq(self):
         """Test fetching public FAQ"""
