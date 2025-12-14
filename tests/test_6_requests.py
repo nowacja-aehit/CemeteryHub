@@ -1,21 +1,45 @@
 import unittest
+import os
 import json
 import urllib.request
 import urllib.error
 
 class TestServiceRequests(unittest.TestCase):
-    BASE_URL = "http://localhost:5000/api"
+    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+    if not BASE_URL.endswith("/api"):
+        BASE_URL = f"{BASE_URL}/api"
 
     def test_request_lifecycle(self):
         """Test create request and admin management"""
-        # Create (Public)
-        # Need a grave ID first, assuming ID 1 exists or we fail gracefully
-        # Ideally we should create a grave first, but for simplicity we'll try ID 1
-        # If ID 1 doesn't exist, this test might fail. 
-        # Let's assume seed data was run or we handle the error.
         
+        # 1. Create a temporary grave first to ensure we have a valid ID and don't mess up existing data
+        # This avoids the issue of trying to add a service to a non-existent grave
+        grave_payload = json.dumps({
+            "name": "Temp Grave For Request Test",
+            "section": "T",
+            "row": "1",
+            "plot": "1"
+        }).encode('utf-8')
+        
+        grave_req = urllib.request.Request(
+            f"{self.BASE_URL}/admin/graves",
+            data=grave_payload,
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        
+        grave_id = None
+        try:
+            with urllib.request.urlopen(grave_req) as response:
+                self.assertEqual(response.status, 201)
+                grave_data = json.loads(response.read().decode())
+                grave_id = grave_data['id']
+        except urllib.error.URLError as e:
+            self.fail(f"Could not create temp grave: {e}")
+
+        # 2. Create Service Request linked to that grave
         payload = json.dumps({
-            "graveId": 1,
+            "graveId": grave_id,
             "serviceType": "Cleaning",
             "contactName": "John Doe",
             "contactEmail": "john@example.com",
@@ -30,29 +54,28 @@ class TestServiceRequests(unittest.TestCase):
             method='POST'
         )
         
+        req_id = None
         try:
             with urllib.request.urlopen(req) as response:
                 self.assertEqual(response.status, 201)
         except urllib.error.URLError as e:
-            # If grave 1 doesn't exist, we might get an error. 
-            # But let's proceed assuming DB is seeded or we accept failure if empty.
-            print(f"Create request failed (possibly no grave ID 1): {e}")
-            return
+            self.fail(f"Create request failed: {e}")
 
-        # List (Admin)
+        # 3. List (Admin) to get ID
         try:
             with urllib.request.urlopen(f"{self.BASE_URL}/admin/service-requests") as response:
                 self.assertEqual(response.status, 200)
                 data = json.loads(response.read().decode())
-                self.assertIsInstance(data, list)
-                if len(data) > 0:
-                    req_id = data[-1]['id'] # Get the last created one
+                # Find our specific request by grave_id to be sure
+                my_req = next((r for r in data if r['graveId'] == grave_id), None)
+                if my_req:
+                    req_id = my_req['id']
                 else:
-                    self.fail("No requests found after creation")
+                    self.fail("Created request not found in list")
         except urllib.error.URLError as e:
             self.fail(f"List failed: {e}")
 
-        # Update Status (Admin)
+        # 4. Update Status (Admin)
         payload = json.dumps({
             "status": "completed"
         }).encode('utf-8')
@@ -72,7 +95,9 @@ class TestServiceRequests(unittest.TestCase):
         except urllib.error.URLError as e:
             self.fail(f"Update failed: {e}")
 
-        # Delete (Admin)
+        # 5. Delete Request (Admin)
+        # Important: We must delete the request BEFORE deleting the grave
+        # to respect Foreign Key constraints.
         req = urllib.request.Request(
             f"{self.BASE_URL}/admin/service-requests/{req_id}",
             method='DELETE'
@@ -83,6 +108,18 @@ class TestServiceRequests(unittest.TestCase):
                 self.assertEqual(response.status, 200)
         except urllib.error.URLError as e:
             self.fail(f"Delete failed: {e}")
+            
+        # 6. Delete Temp Grave
+        # Now it is safe to delete the grave
+        req = urllib.request.Request(
+            f"{self.BASE_URL}/admin/graves/{grave_id}",
+            method='DELETE'
+        )
+        try:
+            with urllib.request.urlopen(req) as response:
+                self.assertEqual(response.status, 200)
+        except urllib.error.URLError as e:
+            self.fail(f"Delete temp grave failed: {e}")
 
 if __name__ == '__main__':
     unittest.main()

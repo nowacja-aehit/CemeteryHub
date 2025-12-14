@@ -1,10 +1,13 @@
 import unittest
+import os
 import json
 import urllib.request
 import urllib.error
 
 class TestReservations(unittest.TestCase):
-    BASE_URL = "http://localhost:5000/api"
+    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+    if not BASE_URL.endswith("/api"):
+        BASE_URL = f"{BASE_URL}/api"
 
     def test_reservation_lifecycle(self):
         """Test create reservation and admin management"""

@@ -1,16 +1,23 @@
 import unittest
+import os
 import json
+import time
 import urllib.request
 import urllib.error
 
 class TestUsers(unittest.TestCase):
-    BASE_URL = "http://localhost:5000/api"
+    BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+    if not BASE_URL.endswith("/api"):
+        BASE_URL = f"{BASE_URL}/api"
 
     def test_user_lifecycle(self):
         """Test create, update, delete user"""
+        # Use a unique username to avoid "User already exists" if previous test run failed
+        unique_username = f"testuser_{int(time.time())}"
+        
         # Create
         payload = json.dumps({
-            "username": "testuser",
+            "username": unique_username,
             "password": "password123",
             "role": "user"
         }).encode('utf-8')
@@ -27,7 +34,7 @@ class TestUsers(unittest.TestCase):
                 self.assertEqual(response.status, 201)
                 data = json.loads(response.read().decode())
                 user_id = data['id']
-                self.assertEqual(data['username'], "testuser")
+                self.assertEqual(data['username'], unique_username)
         except urllib.error.URLError as e:
             # If user already exists, we might fail. 
             # In a real test env, we should clean up first.
